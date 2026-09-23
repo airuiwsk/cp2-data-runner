@@ -1,0 +1,22 @@
+name: T403 Binance data acquisition
+on:
+  workflow_dispatch:
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Acquire official Binance archives and verify official checksums
+        run: python research/t403_binance_acquire.py
+      - name: Archive bundle digest
+        run: |
+          tar -C out -czf t403-binance.tar.gz t403-binance
+          sha256sum t403-binance.tar.gz | tee t403-binance.tar.gz.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: t403-binance-data
+          path: |
+            t403-binance.tar.gz
+            t403-binance.tar.gz.sha256
+          retention-days: 30
