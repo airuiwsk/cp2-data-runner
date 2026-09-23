@@ -1,6 +1,11 @@
 name: T403 Binance data acquisition
 on:
   workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/t403-binance.yml"
 jobs:
   acquire:
     runs-on: ubuntu-latest
