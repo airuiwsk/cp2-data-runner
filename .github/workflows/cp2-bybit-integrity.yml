@@ -1,4 +1,4 @@
-# Public runner trigger; collector contract remains frozen.
+# Public runner endpoint diagnostics; collector contract remains frozen.
 name: CP2 Bybit integrity
 
 on:
@@ -20,6 +20,29 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+      - name: Probe official Bybit V5 hosts
+        run: |
+          python - <<'PY'
+          import urllib.error, urllib.parse, urllib.request
+          hosts = [
+              "https://api.bybit.com",
+              "https://api.bytick.com",
+              "https://api.manepa.jp",
+          ]
+          path = "/v5/market/instruments-info"
+          query = urllib.parse.urlencode({"category":"linear","symbol":"BTCUSDT"})
+          for host in hosts:
+              url=f"{host}{path}?{query}"
+              req=urllib.request.Request(url, headers={"User-Agent":"AI-Trading-CP2/1.0"})
+              try:
+                  with urllib.request.urlopen(req, timeout=15) as r:
+                      body=r.read()
+                      print(host, "HTTP", r.status, "bytes", len(body))
+              except urllib.error.HTTPError as e:
+                  print(host, "HTTP", e.code)
+              except Exception as e:
+                  print(host, type(e).__name__, str(e))
+          PY
       - name: Collect exact Bybit response bytes and verify
         run: |
           set -euo pipefail
