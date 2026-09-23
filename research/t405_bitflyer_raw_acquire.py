@@ -13,7 +13,11 @@ OUT.mkdir(parents=True,exist_ok=True)
 rawdir=OUT/"raw"; rawdir.mkdir(exist_ok=True)
 
 def parse_ts(s):
-    return datetime.fromisoformat(s.replace("Z","+00:00"))
+    t = datetime.fromisoformat(s.replace("Z","+00:00"))
+    # bitFlyer exec_date is documented/returned as UTC but may omit an explicit
+    # offset (e.g. "2026-09-23T22:51:14.92"). Normalize such values to UTC
+    # before comparing them with the frozen offset-aware boundaries.
+    return t.replace(tzinfo=timezone.utc) if t.tzinfo is None else t.astimezone(timezone.utc)
 start=parse_ts(START); end=parse_ts(END)
 before=None; page=0; seen=set(); min_ts=None; max_ts=None; duplicate_ids=0; records_in_window=0
 chunks=[]
