@@ -1,0 +1,38 @@
+name: T400 CP2-governed history
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/t400-history.yml'
+      - 'research/t400_history_acquire.py'
+permissions:
+  contents: read
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Acquire frozen T400 input window
+        run: python research/t400_history_acquire.py acquire --out artifacts/t400-history --base-url https://api.manepa.jp
+      - name: Verify raw/provenance hashes and continuity
+        run: python research/t400_history_acquire.py verify --out artifacts/t400-history
+      - name: Print integrity report only
+        if: always()
+        run: test -f artifacts/t400-history/quality-report.json && cat artifacts/t400-history/quality-report.json || true
+      - name: Bundle immutable input evidence
+        if: success()
+        run: tar -czf t400-history.tar.gz -C artifacts t400-history && sha256sum t400-history.tar.gz > t400-history.sha256
+      - name: Upload T400 input bundle
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t400-history-${{ github.run_id }}
+          path: |
+            t400-history.tar.gz
+            t400-history.sha256
+          if-no-files-found: error
+          retention-days: 30
