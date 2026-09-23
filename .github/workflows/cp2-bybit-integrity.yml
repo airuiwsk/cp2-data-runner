@@ -10,7 +10,7 @@ on:
       - 'research/cp2_forward_append.py'
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   integrity:
@@ -57,6 +57,30 @@ jobs:
         run: |
           test -f artifacts/cp2-bybit-integrity/quality-report.json && cat artifacts/cp2-bybit-integrity/quality-report.json || true
           test -f artifacts/cp2-bybit-integrity/forward/append-log.jsonl && wc -l artifacts/cp2-bybit-integrity/forward/append-log.jsonl || true
+      - name: Persist canonical CP2 evidence once
+        if: success()
+        run: |
+          set -euo pipefail
+          if [ -e evidence/cp2-v1-canonical-sample.tar.gz ]; then
+            echo "Canonical CP2 evidence already exists; refusing to overwrite."
+            exit 0
+          fi
+          mkdir -p evidence
+          tar -czf evidence/cp2-v1-canonical-sample.tar.gz -C artifacts cp2-bybit-integrity
+          sha256sum evidence/cp2-v1-canonical-sample.tar.gz > evidence/cp2-v1-canonical-sample.sha256
+          {
+            echo "contract=CP2-v1"
+            echo "workflow_run_id=${GITHUB_RUN_ID}"
+            echo "runner_commit=${GITHUB_SHA}"
+            echo "source_base_url=https://api.manepa.jp"
+            echo "created_at_utc=$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+          } > evidence/cp2-v1-canonical-sample.meta.txt
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add evidence/cp2-v1-canonical-sample.tar.gz evidence/cp2-v1-canonical-sample.sha256 evidence/cp2-v1-canonical-sample.meta.txt
+          git commit -m "Persist canonical CP2 integrity evidence"
+          git push
+
       - name: Upload immutable integrity bundle
         if: always()
         uses: actions/upload-artifact@v4
