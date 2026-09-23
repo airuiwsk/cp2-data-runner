@@ -1,0 +1,40 @@
+name: T402 OI acquisition
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/t402-oi.yml'
+      - 'research/t402_oi_acquire.py'
+
+permissions:
+  contents: read
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Acquire preregistered T402 5m OI only
+        run: |
+          set -euo pipefail
+          python research/t402_oi_acquire.py acquire --out artifacts/t402-oi --base-url https://api.manepa.jp
+          python research/t402_oi_acquire.py verify --out artifacts/t402-oi
+          cat artifacts/t402-oi/quality-report.json
+      - name: Bundle immutable OI evidence
+        run: |
+          tar -czf t402-oi.tar.gz -C artifacts t402-oi
+          sha256sum t402-oi.tar.gz > t402-oi.sha256
+      - name: Upload OI bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: t402-oi-${{ github.run_id }}
+          path: |
+            t402-oi.tar.gz
+            t402-oi.sha256
+          if-no-files-found: error
+          retention-days: 30
