@@ -1,0 +1,27 @@
+name: T400 funding schedule
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'research/t400_funding_schedule_acquire.py'
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Acquire funding schedule raw-first
+        run: python research/t400_funding_schedule_acquire.py acquire --out t400-funding
+      - name: Verify hashes and quality
+        run: python research/t400_funding_schedule_acquire.py verify --out t400-funding
+      - name: Bundle immutable input
+        run: |
+          tar -czf t400-funding.tar.gz t400-funding
+          sha256sum t400-funding.tar.gz > t400-funding.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: t400-funding-${{ github.run_id }}
+          path: |
+            t400-funding.tar.gz
+            t400-funding.sha256
+          if-no-files-found: error
