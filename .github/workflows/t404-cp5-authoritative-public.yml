@@ -1,0 +1,43 @@
+name: T404 CP5 authoritative public fallback
+on:
+  push:
+    branches: [main]
+    paths: [".github/workflows/t404-cp5-authoritative-public.yml"]
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - name: Identity and ledger preflight
+        run: |
+          set -euo pipefail
+          test "$(git hash-object frozen/t404_cp5_evaluator.py)" = "304ecf9c0ca3ec37cdb7db47aeba45b1a522f814"
+          test "$(grep -c 'AEDE-PERP-TIMESERIES-MOMENTUM' frozen/t404-trial-ledger-snapshot.md)" = "1"
+      - name: Download immutable OOS artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          gh api repos/airuiwsk/cp2-data-runner/actions/artifacts/10767840171/zip > artifact.zip
+          echo '759fb46aeda5dabc9a77a5aced8312913dce226c363713aa7eecfe063df2721d  artifact.zip' | sha256sum -c -
+          unzip -q artifact.zip -d artifact
+          cd artifact
+          echo '9a327d97a63485d3e8ebbdf0393c03739fcfccad48a95f0e261af0d9f217a66a  t404-cp5-oos.tar.gz' | sha256sum -c -
+          tar -xzf t404-cp5-oos.tar.gz
+      - name: Execute frozen E1-E8 sequence
+        run: |
+          set -euo pipefail
+          python frozen/t404_cp5_evaluator.py --input artifact/t404-cp5-oos --trial-ledger frozen/t404-trial-ledger-snapshot.md --out T404-cp5-result.json
+          sha256sum T404-cp5-result.json | tee T404-cp5-result.json.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: t404-cp5-authoritative-result
+          path: |
+            T404-cp5-result.json
+            T404-cp5-result.json.sha256
+          retention-days: 30
