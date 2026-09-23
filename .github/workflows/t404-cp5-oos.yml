@@ -6,6 +6,7 @@ on:
       - main
     paths:
       - ".github/workflows/t404-cp5-oos.yml"
+      - "research/t404_cp5_oos_acquire.py"
 
 jobs:
   acquire:
