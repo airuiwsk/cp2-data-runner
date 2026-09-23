@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - '.github/workflows/t405-bitflyer-raw.yml'
+      - 'research/t405_bitflyer_raw_acquire.py'
   schedule:
     - cron: '5 0 24 9 *'
 permissions:
