@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """T405 raw-only acquisition. NO signal/return/PnL/Sharpe calculations."""
-import hashlib, json, os, time, urllib.parse, urllib.request
+import hashlib, json, os, time, urllib.parse, urllib.request, urllib.error
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -13,11 +13,29 @@ OUT.mkdir(parents=True,exist_ok=True)
 rawdir=OUT/"raw"; rawdir.mkdir(exist_ok=True)
 
 def parse_ts(s):
-    t = datetime.fromisoformat(s.replace("Z","+00:00"))
-    # bitFlyer exec_date is documented/returned as UTC but may omit an explicit
-    # offset (e.g. "2026-09-23T22:51:14.92"). Normalize such values to UTC
-    # before comparing them with the frozen offset-aware boundaries.
+    t=datetime.fromisoformat(s.replace("Z","+00:00"))
     return t.replace(tzinfo=timezone.utc) if t.tzinfo is None else t.astimezone(timezone.utc)
+
+def fetch_raw(url):
+    # Transport-only resilience. Retries do not inspect or transform candidate performance.
+    for attempt in range(8):
+        req=urllib.request.Request(url,headers={"User-Agent":"Method-X-T405-raw-acquisition/1.1"})
+        try:
+            with urllib.request.urlopen(req,timeout=30) as r:
+                return r.read(), r.status
+        except urllib.error.HTTPError as e:
+            if e.code not in (429,500,502,503,504) or attempt==7: raise
+            retry_after=e.headers.get("Retry-After")
+            delay=float(retry_after) if retry_after and retry_after.replace('.','',1).isdigit() else min(60.0,2.0**attempt)
+            print(f"transport retry http={e.code} attempt={attempt+1} sleep={delay}s",flush=True)
+            time.sleep(delay)
+        except (urllib.error.URLError, TimeoutError):
+            if attempt==7: raise
+            delay=min(60.0,2.0**attempt)
+            print(f"transport retry network attempt={attempt+1} sleep={delay}s",flush=True)
+            time.sleep(delay)
+    raise RuntimeError("unreachable")
+
 start=parse_ts(START); end=parse_ts(END)
 before=None; page=0; seen=set(); min_ts=None; max_ts=None; duplicate_ids=0; records_in_window=0
 chunks=[]
@@ -25,9 +43,7 @@ while True:
     q={"product_code":PRODUCT,"count":"500"}
     if before is not None: q["before"]=str(before)
     url=BASE+"?"+urllib.parse.urlencode(q)
-    req=urllib.request.Request(url,headers={"User-Agent":"Method-X-T405-raw-acquisition/1.0"})
-    with urllib.request.urlopen(req,timeout=30) as r:
-        body=r.read(); status=r.status
+    body,status=fetch_raw(url)
     sha=hashlib.sha256(body).hexdigest()
     fn=rawdir/f"page-{page:05d}.json"; fn.write_bytes(body)
     data=json.loads(body)
@@ -42,19 +58,18 @@ while True:
         page_max=t if page_max is None or t>page_max else page_max
         min_ts=t if min_ts is None or t<min_ts else min_ts
         max_ts=t if max_ts is None or t>max_ts else max_ts
-        if start <= t < end: records_in_window += 1
+        if start <= t < end: records_in_window+=1
     chunks.append({"page":page,"url":url,"http_status":status,"bytes":len(body),"sha256":sha,"count":len(data),"min_exec_date":page_min.isoformat() if page_min else None,"max_exec_date":page_max.isoformat() if page_max else None})
     if not data: break
     oldest_id=min(int(x["id"]) for x in data)
     if page_min is not None and page_min < start: break
-    if before is not None and oldest_id >= before: raise RuntimeError("pagination did not move backward")
+    if before is not None and oldest_id>=before: raise RuntimeError("pagination did not move backward")
     before=oldest_id; page+=1
     if page>=10000: raise RuntimeError("page safety limit")
     time.sleep(0.12)
 
 acquired_at=datetime.now(timezone.utc)
 coverage_start_ok=min_ts is not None and min_ts < start
-# END can only be certified after wall clock passes END and data reaches it.
 coverage_end_ok=acquired_at >= end and max_ts is not None and max_ts >= end
 manifest={
  "trial_id":"T405","mode":"RAW_ONLY_NO_PERFORMANCE","product":PRODUCT,
@@ -72,6 +87,5 @@ mb=json.dumps(manifest,indent=2,sort_keys=True).encode(); (OUT/"provenance.json"
 print(json.dumps({k:v for k,v in manifest.items() if k!="chunks"},indent=2))
 if not coverage_start_ok:
     print("BLOCKED_DATA_RETENTION: API did not reach frozen start",flush=True); raise SystemExit(42)
-# Pre-END runs are intentionally useful raw-first snapshots; never claim complete window.
 if acquired_at < end:
     print("PARTIAL_EXPECTED: frozen end is still in the future; preserve this snapshot and reacquire after END",flush=True)
