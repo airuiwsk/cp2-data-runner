@@ -48,31 +48,54 @@ def canon(obj) -> bytes:
 def request(endpoint: str, params: dict, base: str, user_agent: str):
     q = urllib.parse.urlencode(sorted(params.items()))
     url = f"{base.rstrip('/')}{endpoint}?{q}"
-    started = now()
-    req = urllib.request.Request(url, headers={"User-Agent": user_agent})
-    with urllib.request.urlopen(req, timeout=30) as h:
-        body = h.read()
-        status = h.status
-    received = now()
-    payload = json.loads(body)
-    if status != 200 or payload.get("retCode") != 0:
-        raise RuntimeError(
-            f"fail-closed endpoint={endpoint} HTTP={status} retCode={payload.get('retCode')}"
+    retryable_ret_codes = {10000, 10006, 10016}
+    attempts = []
+    for attempt in range(8):
+        started = now()
+        req = urllib.request.Request(url, headers={"User-Agent": user_agent})
+        try:
+            with urllib.request.urlopen(req, timeout=30) as h:
+                body = h.read()
+                status = h.status
+        except urllib.error.HTTPError as e:
+            body = e.read()
+            status = e.code
+            attempts.append({"attempt": attempt + 1, "http_status": status})
+            if status == 429 and attempt < 7:
+                time.sleep(min(8.0, 0.5 * (2 ** attempt)))
+                continue
+            raise RuntimeError(
+                f"fail-closed endpoint={endpoint} HTTP={status} params={params}"
+            ) from e
+        received = now()
+        payload = json.loads(body)
+        ret_code = payload.get("retCode")
+        attempts.append(
+            {"attempt": attempt + 1, "http_status": status, "retCode": ret_code}
         )
-    prov = {
-        "source_venue": "Bybit",
-        "source_base_url": base.rstrip("/"),
-        "source_endpoint": endpoint,
-        "request_parameters": dict(sorted(params.items())),
-        "request_started_at_utc": started,
-        "response_received_at_utc": received,
-        "http_status": status,
-        "raw_sha256": sha(body),
-        "raw_bytes": len(body),
-        "schema_contract_version": "CP2-v1/T404-CP5-OOS-input-v1",
-        "performance_computed": False,
-    }
-    return body, payload, prov
+        if status == 200 and ret_code == 0:
+            prov = {
+                "source_venue": "Bybit",
+                "source_base_url": base.rstrip("/"),
+                "source_endpoint": endpoint,
+                "request_parameters": dict(sorted(params.items())),
+                "request_started_at_utc": started,
+                "response_received_at_utc": received,
+                "http_status": status,
+                "raw_sha256": sha(body),
+                "raw_bytes": len(body),
+                "schema_contract_version": "CP2-v1/T404-CP5-OOS-input-v1",
+                "performance_computed": False,
+                "request_attempts": attempts,
+            }
+            return body, payload, prov
+        if ret_code in retryable_ret_codes and attempt < 7:
+            time.sleep(min(8.0, 0.5 * (2 ** attempt)))
+            continue
+        raise RuntimeError(
+            f"fail-closed endpoint={endpoint} HTTP={status} retCode={ret_code} params={params}"
+        )
+    raise RuntimeError(f"fail-closed retry exhausted endpoint={endpoint} params={params}")
 
 
 def acquire_bars(root: Path, base: str, manifest: list, quality: dict):
