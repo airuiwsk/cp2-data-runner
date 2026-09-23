@@ -46,9 +46,9 @@ def sha256(data: bytes) -> str:
     return hashlib.sha256(data).hexdigest()
 
 
-def request(endpoint: str, params: dict, timeout: int = 20) -> tuple[bytes, dict]:
+def request(endpoint: str, params: dict, base_url: str = BASE_URL, timeout: int = 20) -> tuple[bytes, dict]:
     query = urllib.parse.urlencode(sorted(params.items()))
-    url = f"{BASE_URL}{endpoint}?{query}"
+    url = f"{base_url.rstrip('/')}{endpoint}?{query}"
     started = utc_now()
     req = urllib.request.Request(url, headers={"User-Agent": "AI-Trading-CP2/1.0"})
     with urllib.request.urlopen(req, timeout=timeout) as resp:
@@ -60,6 +60,7 @@ def request(endpoint: str, params: dict, timeout: int = 20) -> tuple[bytes, dict
         raise RuntimeError(f"fail-closed source response: HTTP={status}, retCode={parsed.get('retCode')}")
     provenance = {
         "source_venue": "Bybit",
+        "source_base_url": base_url.rstrip("/"),
         "source_endpoint": endpoint,
         "request_parameters": dict(sorted(params.items())),
         "request_started_at_utc": started,
@@ -123,7 +124,7 @@ def write_csv(path: Path, rows: list[dict]) -> None:
             w.writerow({k: r.get(k, "") for k in fields})
 
 
-def collect(root: Path, start: str, end: str) -> None:
+def collect(root: Path, start: str, end: str, base_url: str = BASE_URL) -> None:
     s, e = ms(start), ms(end)
     if e <= s or e - s > 60 * 60 * 1000:
         raise ValueError("integrity window must be >0 and <=1 hour")
@@ -135,20 +136,20 @@ def collect(root: Path, start: str, end: str) -> None:
     (root / "run.json").write_bytes(canonical_json(run))
 
     for symbol in SYMBOLS:
-        body, prov = request("/v5/market/instruments-info", {"category": "linear", "symbol": symbol})
+        body, prov = request("/v5/market/instruments-info", {"category": "linear", "symbol": symbol}, base_url=base_url)
         save_raw(root, f"{symbol}.instrument", body, prov, manifest)
         time.sleep(0.08)
 
         # Funding uses a wider source query because the integrity window may contain no settlement.
         body, prov = request("/v5/market/funding/history", {"category": "linear", "symbol": symbol,
-                                                            "endTime": e - 1, "limit": 2})
+                                                            "endTime": e - 1, "limit": 2}, base_url=base_url)
         save_raw(root, f"{symbol}.funding", body, prov, manifest)
         time.sleep(0.08)
 
         for dataset, endpoint in KLINES.items():
             params = {"category": "linear", "symbol": symbol, "interval": "1",
                       "start": s, "end": e - 1, "limit": 1000}
-            body, prov = request(endpoint, params)
+            body, prov = request(endpoint, params, base_url=base_url)
             payload = save_raw(root, f"{symbol}.{dataset}", body, prov, manifest)
             rows = normalize_kline(payload, symbol, dataset, s, e, prov["raw_sha256"])
             out = root / "normalized" / f"{symbol}.{dataset}.csv"
@@ -195,11 +196,12 @@ def main() -> None:
     c.add_argument("--out", required=True)
     c.add_argument("--start", default=DEFAULT_START)
     c.add_argument("--end", default=DEFAULT_END)
+    c.add_argument("--base-url", default=BASE_URL)
     v = sub.add_parser("verify")
     v.add_argument("--out", required=True)
     a = p.parse_args()
     if a.cmd == "collect":
-        collect(Path(a.out), a.start, a.end)
+        collect(Path(a.out), a.start, a.end, a.base_url)
     else:
         verify(Path(a.out))
 
