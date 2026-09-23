@@ -51,3 +51,4 @@ def verify(root):
  print('PASS T400 boundary integrity')
 if __name__=='__main__':
  import argparse; p=argparse.ArgumentParser(); p.add_argument('cmd',choices=['acquire','verify']); p.add_argument('--out',required=True); a=p.parse_args(); (acquire if a.cmd=='acquire' else verify)(a.out)
+# workflow trigger: boundary-v1 collector frozen for this acquisition
