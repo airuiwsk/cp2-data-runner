@@ -4,6 +4,7 @@ on:
   push:
     paths:
       - 'research/t400_funding_schedule_acquire.py'
+      - '.github/workflows/t400-funding-schedule.yml'
 jobs:
   acquire:
     runs-on: ubuntu-latest
