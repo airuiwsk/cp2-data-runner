@@ -1,0 +1,35 @@
+name: T400 boundary completion
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/t400-boundary.yml'
+      - 'research/t400_boundary_acquire.py'
+permissions:
+  contents: read
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Acquire exact frozen-evaluator boundary context
+        run: python research/t400_boundary_acquire.py acquire --out artifacts/t400-boundary
+      - name: Verify hashes and exact required minutes
+        run: python research/t400_boundary_acquire.py verify --out artifacts/t400-boundary
+      - name: Bundle immutable boundary evidence
+        if: success()
+        run: tar -czf t400-boundary.tar.gz -C artifacts t400-boundary && sha256sum t400-boundary.tar.gz > t400-boundary.sha256
+      - name: Upload boundary bundle
+        if: success()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t400-boundary-${{ github.run_id }}
+          path: |
+            t400-boundary.tar.gz
+            t400-boundary.sha256
+          if-no-files-found: error
+          retention-days: 30
