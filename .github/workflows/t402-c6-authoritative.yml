@@ -1,0 +1,55 @@
+name: T402 authoritative frozen C6
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/t402-c6-authoritative.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Verify exact frozen evaluator blob
+        run: |
+          set -euo pipefail
+          test "$(git hash-object research/t402_c6_evaluator.py)" = "6208f0cdc38fb8002471ac1d5c8dcb5077a84f8d"
+      - name: Download previously integrity-verified immutable inputs
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          mkdir -p inputs/oi inputs/history
+          gh api repos/${{ github.repository }}/actions/artifacts/10743267731/zip > inputs/oi.zip
+          gh api repos/${{ github.repository }}/actions/artifacts/10733803591/zip > inputs/history.zip
+          echo '9382324cdfb88dadc2645ab9364daf0a043d8f32483ed4382bd0792ab6377d37  inputs/oi.zip' | sha256sum -c -
+          echo 'cd74f210ed726e2cf21ecf9a3b893fd5c182bc1f35ba961d12441350e90d9cab  inputs/history.zip' | sha256sum -c -
+          unzip -q inputs/oi.zip -d inputs/oi
+          unzip -q inputs/history.zip -d inputs/history
+          (cd inputs/oi && sha256sum -c t402-oi.sha256)
+          (cd inputs/history && sha256sum -c t400-history.sha256)
+          tar -xzf inputs/oi/t402-oi.tar.gz -C inputs
+          tar -xzf inputs/history/t400-history.tar.gz -C inputs
+      - name: Execute canonical frozen evaluator exactly once
+        run: |
+          set -euo pipefail
+          mkdir -p results
+          python research/t402_c6_evaluator.py --oi inputs/t402-oi --history inputs/t400-history --out results/T402-c6-decision.json
+          sha256sum results/T402-c6-decision.json | tee results/T402-c6-decision.sha256
+          cat results/T402-c6-decision.json
+      - name: Upload authoritative decision artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: t402-c6-authoritative-${{ github.run_id }}
+          path: results/
+          if-no-files-found: error
+          retention-days: 30
