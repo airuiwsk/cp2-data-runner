@@ -1,0 +1,35 @@
+name: T405 bitFlyer raw acquisition
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - '.github/workflows/t405-bitflyer-raw.yml'
+  schedule:
+    - cron: '5 0 24 9 *'
+permissions:
+  contents: read
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Acquire raw public executions only
+        run: python research/t405_bitflyer_raw_acquire.py
+      - name: Hash complete evidence tree
+        if: always()
+        run: |
+          if [ -d evidence/t405-bitflyer-raw ]; then
+            find evidence/t405-bitflyer-raw -type f -print0 | sort -z | xargs -0 sha256sum > t405-evidence-tree.sha256
+          fi
+      - name: Upload immutable acquisition evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t405-bitflyer-raw-${{ github.run_id }}
+          path: |
+            evidence/t405-bitflyer-raw
+            t405-evidence-tree.sha256
+          if-no-files-found: error
+          retention-days: 90
