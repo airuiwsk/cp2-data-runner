@@ -1,0 +1,44 @@
+name: T404 CP5 authoritative E1-E8
+on:
+  push:
+    branches: [main]
+    paths: [".github/workflows/t404-cp5-evaluate.yml"]
+  workflow_dispatch:
+permissions:
+  actions: read
+  contents: read
+jobs:
+  evaluate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Download verified immutable OOS artifact
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          curl -fL -H "Authorization: Bearer ${GH_TOKEN}" -H "X-GitHub-Api-Version: 2022-11-28" \
+            https://api.github.com/repos/airuiwsk/cp2-data-runner/actions/artifacts/10767840171/zip -o artifact.zip
+          echo '759fb46aeda5dabc9a77a5aced8312913dce226c363713aa7eecfe063df2721d  artifact.zip' | sha256sum -c -
+          unzip -q artifact.zip -d artifact
+          cd artifact
+          echo '9a327d97a63485d3e8ebbdf0393c03739fcfccad48a95f0e261af0d9f217a66a  t404-cp5-oos.tar.gz' | sha256sum -c -
+          tar -xzf t404-cp5-oos.tar.gz
+      - name: Fetch and identity-check frozen evaluator and ledger
+        run: |
+          set -euo pipefail
+          curl -fL https://raw.githubusercontent.com/airuiwsk/AI-Trading/6ffdcc590cc870760e1a0728357cf4c892b77e4c/research/t404_cp5_evaluator.py -o evaluator.py
+          test "$(git hash-object evaluator.py)" = "304ecf9c0ca3ec37cdb7db47aeba45b1a522f814"
+          curl -fL https://raw.githubusercontent.com/airuiwsk/AI-Trading/8bf2fa23a736ccf15cfe34530c7999fa744fccdc/research/trial-ledger.md -o trial-ledger.md
+      - name: Execute frozen gates in order
+        run: |
+          set -euo pipefail
+          python evaluator.py --input artifact/t404-cp5-oos --trial-ledger trial-ledger.md --out T404-cp5-result.json
+          sha256sum T404-cp5-result.json | tee T404-cp5-result.json.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: t404-cp5-authoritative-result
+          path: |
+            T404-cp5-result.json
+            T404-cp5-result.json.sha256
+          retention-days: 30
