@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/cp2-bybit-integrity.yml'
       - 'research/cp2_bybit_integrity.py'
+      - 'research/cp2_forward_append.py'
 
 permissions:
   contents: read
@@ -48,10 +49,14 @@ jobs:
           set -euo pipefail
           python research/cp2_bybit_integrity.py collect --out artifacts/cp2-bybit-integrity --base-url https://api.manepa.jp
           python research/cp2_bybit_integrity.py verify --out artifacts/cp2-bybit-integrity
+          python research/cp2_forward_append.py append --out artifacts/cp2-bybit-integrity --base-url https://api.manepa.jp
+          python research/cp2_forward_append.py append --out artifacts/cp2-bybit-integrity --base-url https://api.manepa.jp
+          python research/cp2_forward_append.py verify --out artifacts/cp2-bybit-integrity --min-batches 2
       - name: Show integrity-only report
         if: always()
         run: |
           test -f artifacts/cp2-bybit-integrity/quality-report.json && cat artifacts/cp2-bybit-integrity/quality-report.json || true
+          test -f artifacts/cp2-bybit-integrity/forward/append-log.jsonl && wc -l artifacts/cp2-bybit-integrity/forward/append-log.jsonl || true
       - name: Upload immutable integrity bundle
         if: always()
         uses: actions/upload-artifact@v4
