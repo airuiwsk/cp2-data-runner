@@ -1,3 +1,4 @@
+# Public runner trigger; collector contract remains frozen.
 name: CP2 Bybit integrity
 
 on:
