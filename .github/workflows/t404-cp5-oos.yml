@@ -1,0 +1,30 @@
+name: T404 CP5 OOS data acquisition
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+    paths:
+      - ".github/workflows/t404-cp5-oos.yml"
+
+jobs:
+  acquire:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - name: Acquire frozen T404 CP5 OOS inputs
+        run: python research/t404_cp5_oos_acquire.py acquire --out artifacts/t404-cp5-oos
+      - name: Verify hashes and quality
+        run: python research/t404_cp5_oos_acquire.py verify --out artifacts/t404-cp5-oos
+      - name: Bundle immutable input evidence
+        run: |
+          tar -C artifacts -czf t404-cp5-oos.tar.gz t404-cp5-oos
+          sha256sum t404-cp5-oos.tar.gz | tee t404-cp5-oos.tar.gz.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: t404-cp5-oos
+          path: |
+            t404-cp5-oos.tar.gz
+            t404-cp5-oos.tar.gz.sha256
+          retention-days: 30
