@@ -46,7 +46,7 @@ jobs:
       - name: Collect exact Bybit response bytes and verify
         run: |
           set -euo pipefail
-          python research/cp2_bybit_integrity.py collect --out artifacts/cp2-bybit-integrity
+          python research/cp2_bybit_integrity.py collect --out artifacts/cp2-bybit-integrity --base-url https://api.manepa.jp
           python research/cp2_bybit_integrity.py verify --out artifacts/cp2-bybit-integrity
       - name: Show integrity-only report
         if: always()
