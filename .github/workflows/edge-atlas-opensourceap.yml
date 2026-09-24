@@ -1,4 +1,6 @@
 name: Edge Atlas OpenSourceAP ingest
+permissions:
+  contents: write
 on:
   workflow_dispatch:
   push:
@@ -18,6 +20,19 @@ jobs:
         run: |
           tar -C out -czf edge-atlas-opensourceap.tar.gz edge-atlas-opensourceap
           sha256sum edge-atlas-opensourceap.tar.gz | tee edge-atlas-opensourceap.tar.gz.sha256
+      - name: Persist normalized Atlas snapshot
+        run: |
+          mkdir -p evidence/edge-atlas/opensourcheap
+          cp out/edge-atlas-opensourceap/atlas.jsonl evidence/edge-atlas/opensourcheap/atlas.jsonl
+          cp out/edge-atlas-opensourceap/summary.json evidence/edge-atlas/opensourcheap/summary.json
+          cp out/edge-atlas-opensourceap/manifest.json evidence/edge-atlas/opensourcheap/manifest.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add evidence/edge-atlas/opensourcheap
+          if ! git diff --cached --quiet; then
+            git commit -m "Persist OpenSourceAP Edge Atlas snapshot"
+            git push
+          fi
       - uses: actions/upload-artifact@v4
         with:
           name: edge-atlas-opensourceap
