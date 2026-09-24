@@ -6,14 +6,17 @@ on:
     paths:
       - '.github/workflows/t405-bitflyer-raw.yml'
       - 'research/t405_bitflyer_raw_acquire.py'
-  schedule:
-    - cron: '5 0 24 9 *'
 permissions:
   contents: read
 jobs:
   acquire:
     runs-on: ubuntu-latest
     timeout-minutes: 60
+    env:
+      # Cursor is the oldest execution ID in immutable artifact 10783187690,
+      # run 35935992158. Resume is acquisition-only; frozen T405 design unchanged.
+      T405_BEFORE: '2651607557'
+      T405_PAGE_OFFSET: '750'
     steps:
       - uses: actions/checkout@v4
       - name: Acquire raw public executions only
