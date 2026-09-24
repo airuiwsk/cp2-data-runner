@@ -12,9 +12,25 @@ jobs:
       contents: read
     steps:
       - uses: actions/checkout@v4
-      - name: Verify frozen evaluator blob
+      - name: Verify corrected frozen evaluator blob
         run: |
-          test "$(git hash-object frozen/t405_c6_evaluator.py)" = "58cfe94b323e5bced973759a1825c4d1013e01b7"
+          test "$(git hash-object frozen/t405_c6_evaluator.py)" = "6b96d2dcb78cd703c34b56d6d4435e393f72b321"
+      - name: Non-performance timestamp fixture
+        run: |
+          python - <<'PY'
+          import importlib.util
+          from datetime import datetime, timezone
+          spec=importlib.util.spec_from_file_location("t405","frozen/t405_c6_evaluator.py")
+          m=importlib.util.module_from_spec(spec); spec.loader.exec_module(m)
+          assert m.dt("2026-08-24T00:00:00") == m.START
+          assert m.dt("2026-08-24T00:00:00Z") == m.START
+          assert m.dt("2026-08-24T09:00:00+09:00") == m.START
+          assert m.END == datetime(2026,9,24,tzinfo=timezone.utc)
+          assert m.EXPECTED_N == 1531794
+          assert m.EXPECTED_SHA == "bfc8775ca2aa337a82c0a89d157ed4f5d8cb4e132e1cec221df03423da02b855"
+          assert (m.HURDLE,m.HIGH,m.CONTROL,m.MIN_N) == (0.002,0.20,0.02,30)
+          print("NON_PERFORMANCE_FIXTURE_PASS")
+          PY
       - name: Download immutable T405 raw artifacts
         env:
           GH_TOKEN: ${{ github.token }}
@@ -28,7 +44,7 @@ jobs:
             unzip -q a.zip -d "input/s$((i+1))"
             rm a.zip
           done
-      - name: Execute unchanged frozen C6 and capture exact evidence
+      - name: Execute corrected frozen C6 and capture exact evidence
         id: eval
         shell: bash
         run: |
