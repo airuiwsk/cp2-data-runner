@@ -1,0 +1,14 @@
+{
+  "SignalDoc.csv": {
+    "sha256": "f6c055120bad7afe97c16e23e0f49bce0982269026605a955e8064bd661cf415",
+    "bytes": 181712
+  },
+  "atlas.jsonl": {
+    "sha256": "4c5cc4cf423733245ec396551ee401e2609e5a06660e1a4af5c0b0900532a5e1",
+    "bytes": 769055
+  },
+  "summary.json": {
+    "sha256": "3b03fad0e6c3c73158a2ca80d268ba373806c8788522a32b57ef2a93c91b5a71",
+    "bytes": 1529
+  }
+}
