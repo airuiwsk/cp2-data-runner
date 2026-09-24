@@ -13,10 +13,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 60
     env:
-      # Cursor is the oldest execution ID in immutable artifact 10786054620,
-      # run 35944922601. Resume is acquisition-only; frozen T405 design unchanged.
-      T405_BEFORE: '2650720951'
-      T405_PAGE_OFFSET: '2000'
+      # Cursor is the oldest execution ID in immutable artifact 10788670996,
+      # run 35949218086. Resume is acquisition-only; frozen T405 design unchanged.
+      T405_BEFORE: '2650171951'
+      T405_PAGE_OFFSET: '2750'
     steps:
       - uses: actions/checkout@v4
       - name: Acquire raw public executions only
