@@ -1,0 +1,46 @@
+name: T406 GMO raw-first prospective collector
+
+on:
+  workflow_dispatch:
+  schedule:
+    # 4-hour cadence with 4h05m collection gives overlap; raw REST paging also
+    # provides backward overlap. Exact sample is trimmed only after close.
+    - cron: '3 */4 * * *'
+
+permissions:
+  contents: read
+
+jobs:
+  collect:
+    runs-on: ubuntu-latest
+    timeout-minutes: 255
+    steps:
+      - uses: actions/checkout@v4
+      - name: Capture provenance
+        run: |
+          mkdir -p out/t406-gmo-raw
+          printf 'repo=%s\nsha=%s\nrun_id=%s\nrun_attempt=%s\nstarted=%s\n' \
+            "$GITHUB_REPOSITORY" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$(date -u +%FT%TZ)" \
+            > out/t406-gmo-raw/github-provenance.txt
+      - name: Raw-first collection
+        run: |
+          python3 research/t406_gmo_raw_acquire.py \
+            --out out/t406-gmo-raw \
+            --duration-seconds 14700 \
+            --poll-seconds 10 \
+            --pages 10 \
+            --count 100
+      - name: Integrity-only artifact hashes
+        if: always()
+        run: |
+          find out/t406-gmo-raw -type f -print0 | sort -z | xargs -0 sha256sum > out/t406-gmo-raw-files.sha256 || true
+      - name: Upload immutable acquisition artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t406-gmo-raw-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            out/t406-gmo-raw/**
+            out/t406-gmo-raw-files.sha256
+          if-no-files-found: error
+          retention-days: 14
