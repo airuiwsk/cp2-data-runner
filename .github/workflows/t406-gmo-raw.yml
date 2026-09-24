@@ -2,6 +2,9 @@ name: T406 GMO raw-first prospective collector
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 'research/t406_gmo_raw_acquire.py'
   schedule:
     # 4-hour cadence with 4h05m collection gives overlap; raw REST paging also
     # provides backward overlap. Exact sample is trimmed only after close.
@@ -23,10 +26,12 @@ jobs:
             "$GITHUB_REPOSITORY" "$GITHUB_SHA" "$GITHUB_RUN_ID" "$GITHUB_RUN_ATTEMPT" "$(date -u +%FT%TZ)" \
             > out/t406-gmo-raw/github-provenance.txt
       - name: Raw-first collection
+        env:
+          DURATION: ${{ github.event_name == 'push' && '45' || '14700' }}
         run: |
           python3 research/t406_gmo_raw_acquire.py \
             --out out/t406-gmo-raw \
-            --duration-seconds 14700 \
+            --duration-seconds "$DURATION" \
             --poll-seconds 10 \
             --pages 10 \
             --count 100
