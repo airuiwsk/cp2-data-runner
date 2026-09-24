@@ -1,0 +1,43 @@
+{
+  "start_page": "https://www.jpx.co.jp/markets/statistics-derivatives/monthly-quotations/",
+  "pages_scanned": [
+    {
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/monthly-quotations/",
+      "sha256": "2b4f2355e82034b9b7a3db6aec3881532ed6a231539f187f442496ad0f1dd3aa",
+      "bytes": 33849
+    },
+    {
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/monthly-quotations/index.html",
+      "sha256": "2b4f2355e82034b9b7a3db6aec3881532ed6a231539f187f442496ad0f1dd3aa",
+      "bytes": 33849
+    },
+    {
+      "url": "https://www.jpx.co.jp/english/markets/statistics-derivatives/monthly-quotations/index.html",
+      "sha256": "cac99843f63dc24437d56ab2b9b14b6857e3d2a3e1f7f31888b4785011d8cff0",
+      "bytes": 33230
+    },
+    {
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/monthly-quotations/02.html",
+      "sha256": "d8f2496e3313f56c653d9188268cf39d0852e4e5ee4f488c1391e83d41bf4bd7",
+      "bytes": 25260
+    },
+    {
+      "url": "https://www.jpx.co.jp/english/markets/statistics-derivatives/monthly-quotations/02.html",
+      "sha256": "3a1747ad7292d9bbbf5482ee0d1c4557c46e53b9bcc788123aacbdd71f953b46",
+      "bytes": 24964
+    }
+  ],
+  "discovered_excel_count": 0,
+  "selected_download_count": 0,
+  "downloaded_files": [],
+  "files_with_n225mc": 0,
+  "performance_statistics_computed": false,
+  "forbidden": [
+    "returns",
+    "price_change",
+    "mean_return",
+    "sharpe",
+    "hit_rate",
+    "t_stat"
+  ]
+}
