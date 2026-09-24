@@ -15,7 +15,7 @@ OUT.mkdir(parents=True, exist_ok=True)
 import openassetpricing as oap
 
 client=oap.OpenAP()
-df=client.dl_port("op","pandas",["MomSeason"])
+df=client.dl_port("op","pandas",["MomSeason","MomOffSeason"])
 
 # Persist exact returned table before interpretation.
 csv_bytes=df.to_csv(index=False).encode("utf-8")
@@ -38,11 +38,16 @@ meta={
   "package":"openassetpricing",
   "release_list":oap.list_release(),
   "requested_portfolio":"op",
-  "requested_predictors":["MomSeason"],
+  "requested_predictors":["MomSeason","MomOffSeason"],
   "rows":int(len(df)),
   "columns":cols,
   "date_column":date_col,
   "date_coverage_raw":coverage,
+  "signal_names":sorted([str(x) for x in df["signalname"].dropna().unique()]) if "signalname" in df.columns else [],
+  "portfolio_labels":sorted([str(x) for x in df["port"].dropna().unique()]) if "port" in df.columns else [],
+  "signal_lags":sorted([str(x) for x in df["signallag"].dropna().unique()]) if "signallag" in df.columns else [],
+  "row_counts_by_signal":{str(k):int(v) for k,v in df.groupby("signalname").size().to_dict().items()} if "signalname" in df.columns else {},
+  "row_counts_by_port":{str(k):int(v) for k,v in df.groupby("port").size().to_dict().items()} if "port" in df.columns else {},
   "csv_sha256":hashlib.sha256(csv_bytes).hexdigest(),
   "csv_bytes":len(csv_bytes),
   "performance_statistics_computed":False,
