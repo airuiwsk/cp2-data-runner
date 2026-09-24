@@ -1,0 +1,435 @@
+{
+  "source_page": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/",
+  "source_page_sha256": "d1d3a1afc120f96c03b8b8bd5ab6e05c841faf7c00781fe2994e690173ede688",
+  "discovered_candidate_links": [
+    {
+      "text": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/bkk2ed0000005v54-att/SIF_Y_2023.xlsx"
+    },
+    {
+      "text": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/mklp77000000phmu-att/SIF_Y_2024.xlsx"
+    },
+    {
+      "text": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/t13vrt000000gcu1-att/SIF_Y_2025.xlsx"
+    },
+    {
+      "text": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/bkk2ed0000005v54-att/JGBF_Y_2023.xlsx"
+    },
+    {
+      "text": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/mklp77000000phmu-att/JGBF_Y_2024.xlsx"
+    },
+    {
+      "text": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/t13vrt000000gcu1-att/JGBF_Y_2025.xlsx"
+    },
+    {
+      "text": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/bkk2ed0000005v54-att/CDF_Y_2023.xlsx"
+    },
+    {
+      "text": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/mklp77000000phmu-att/CDF_Y_2024.xlsx"
+    },
+    {
+      "text": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/t13vrt000000gcu1-att/CDF_Y_2025.xlsx"
+    },
+    {
+      "text": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/bkk2ed0000005v54-att/SIOP_Y_2023.xlsx"
+    },
+    {
+      "text": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/mklp77000000phmu-att/SIOP_Y_2024.xlsx"
+    },
+    {
+      "text": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/t13vrt000000gcu1-att/SIOP_Y_2025.xlsx"
+    },
+    {
+      "text": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/bkk2ed0000005v54-att/SSOP_Y_2023.xlsx"
+    },
+    {
+      "text": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/mklp77000000phmu-att/SSOP_Y_2024.xlsx"
+    },
+    {
+      "text": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/t13vrt000000gcu1-att/SSOP_Y_2025.xlsx"
+    },
+    {
+      "text": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/bkk2ed0000005v54-att/JGBFOP_Y_2023.xlsx"
+    },
+    {
+      "text": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/mklp77000000phmu-att/JGBFOP_Y_2024.xlsx"
+    },
+    {
+      "text": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/t13vrt000000gcu1-att/JGBFOP_Y_2025.xlsx"
+    },
+    {
+      "text": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/bkk2ed0000005v54-att/CDFOP_Y_2023.xlsx"
+    },
+    {
+      "text": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/mklp77000000phmu-att/CDFOP_Y_2024.xlsx"
+    },
+    {
+      "text": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/t13vrt000000gcu1-att/CDFOP_Y_2025.xlsx"
+    }
+  ],
+  "downloaded_files": [
+    {
+      "label": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/bkk2ed0000005v54-att/SIF_Y_2023.xlsx",
+      "file": "source_0_SIF_Y_2023.xlsx",
+      "sha256": "b02187f2e357dad61bdf26eaeb82ba171a6292bfc896de40f551bbfd67942653",
+      "bytes": 70470,
+      "sheets": [
+        {
+          "sheet": "BO_DY0000",
+          "rows": 220,
+          "cols": 29,
+          "nikkei_micro_label_hits": 22
+        }
+      ]
+    },
+    {
+      "label": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/mklp77000000phmu-att/SIF_Y_2024.xlsx",
+      "file": "source_1_SIF_Y_2024.xlsx",
+      "sha256": "3ce2526625542615128b9ed7721d8e1d7ca2a2829cb0a46a00b9b1dbb2d1574d",
+      "bytes": 72871,
+      "sheets": [
+        {
+          "sheet": "BO_DY0000",
+          "rows": 235,
+          "cols": 29,
+          "nikkei_micro_label_hits": 32
+        }
+      ]
+    },
+    {
+      "label": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/t13vrt000000gcu1-att/SIF_Y_2025.xlsx",
+      "file": "source_2_SIF_Y_2025.xlsx",
+      "sha256": "0025b5a32eb87140ec1805be7e0ae166dfee93d0a1a84dc95cf0e9e5455c8da0",
+      "bytes": 73925,
+      "sheets": [
+        {
+          "sheet": "BO_DY0000",
+          "rows": 244,
+          "cols": 29,
+          "nikkei_micro_label_hits": 32
+        }
+      ]
+    },
+    {
+      "label": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/bkk2ed0000005v54-att/JGBF_Y_2023.xlsx",
+      "file": "source_3_JGBF_Y_2023.xlsx",
+      "sha256": "a05741f14bfd6bb1993672c0d17ade026638b0f6c8708845467a0b598b5cb1f9",
+      "bytes": 45305,
+      "sheets": [
+        {
+          "sheet": "BO_DY0001",
+          "rows": 57,
+          "cols": 34,
+          "nikkei_micro_label_hits": 0
+        }
+      ]
+    },
+    {
+      "label": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/mklp77000000phmu-att/JGBF_Y_2024.xlsx",
+      "file": "source_4_JGBF_Y_2024.xlsx",
+      "sha256": "b2b5fb9f303e2e2790f7bfd8e118f8e762f35c31b66403b8b733ffaf96c6b0e0",
+      "bytes": 45717,
+      "sheets": [
+        {
+          "sheet": "BO_DY0001",
+          "rows": 58,
+          "cols": 34,
+          "nikkei_micro_label_hits": 0
+        }
+      ]
+    },
+    {
+      "label": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/t13vrt000000gcu1-att/JGBF_Y_2025.xlsx",
+      "file": "source_5_JGBF_Y_2025.xlsx",
+      "sha256": "a96e0afece788cc13af4c0c2a6ab4584258f7cadbe108ee545023ebc5e23831e",
+      "bytes": 46244,
+      "sheets": [
+        {
+          "sheet": "BO_DY0001",
+          "rows": 58,
+          "cols": 34,
+          "nikkei_micro_label_hits": 0
+        }
+      ]
+    },
+    {
+      "label": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/bkk2ed0000005v54-att/CDF_Y_2023.xlsx",
+      "file": "source_6_CDF_Y_2023.xlsx",
+      "sha256": "ce3a5febdd72bf98e6260463c955d34471a995c85032ea86107b29b288c14f24",
+      "bytes": 141261,
+      "sheets": [
+        {
+          "sheet": "BO_DY0005",
+          "rows": 187,
+          "cols": 29,
+          "nikkei_micro_label_hits": 0
+        },
+        {
+          "sheet": "BO_DY0007",
+          "rows": 291,
+          "cols": 30,
+          "nikkei_micro_label_hits": 0
+        }
+      ]
+    },
+    {
+      "label": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/mklp77000000phmu-att/CDF_Y_2024.xlsx",
+      "file": "source_7_CDF_Y_2024.xlsx",
+      "sha256": "134cebda575a819bfbfdf093fd1aeff45eee3616ae721b8e0d15ac5a59409490",
+      "bytes": 171882,
+      "sheets": [
+        {
+          "sheet": "BO_DY0005",
+          "rows": 187,
+          "cols": 29,
+          "nikkei_micro_label_hits": 0
+        },
+        {
+          "sheet": "BO_DY0007",
+          "rows": 475,
+          "cols": 30,
+          "nikkei_micro_label_hits": 0
+        }
+      ]
+    },
+    {
+      "label": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/t13vrt000000gcu1-att/CDF_Y_2025.xlsx",
+      "file": "source_8_CDF_Y_2025.xlsx",
+      "sha256": "6b50580f6957a740ae02c5d8852aa50d618813bb6973fd2adb4001aa163ccede",
+      "bytes": 179732,
+      "sheets": [
+        {
+          "sheet": "BO_DY0005",
+          "rows": 191,
+          "cols": 29,
+          "nikkei_micro_label_hits": 0
+        },
+        {
+          "sheet": "BO_DY0007",
+          "rows": 525,
+          "cols": 30,
+          "nikkei_micro_label_hits": 0
+        }
+      ]
+    },
+    {
+      "label": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/bkk2ed0000005v54-att/SIOP_Y_2023.xlsx",
+      "file": "source_9_SIOP_Y_2023.xlsx",
+      "sha256": "3744ad9bb8c2e8ca5fdc41b0678e039e63594c320a4807363ffaa39b84340f26",
+      "bytes": 1548141,
+      "sheets": [
+        {
+          "sheet": "BO_DY0002",
+          "rows": 7647,
+          "cols": 29,
+          "nikkei_micro_label_hits": 0
+        }
+      ]
+    },
+    {
+      "label": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/mklp77000000phmu-att/SIOP_Y_2024.xlsx",
+      "file": "source_10_SIOP_Y_2024.xlsx",
+      "sha256": "6097198e0c998a76ca36975b20b0b23e58a93dd5a7364b50e7a62163f88f463a",
+      "bytes": 1551412,
+      "sheets": [
+        {
+          "sheet": "BO_DY0002",
+          "rows": 10192,
+          "cols": 29,
+          "nikkei_micro_label_hits": 0
+        }
+      ]
+    },
+    {
+      "label": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/t13vrt000000gcu1-att/SIOP_Y_2025.xlsx",
+      "file": "source_11_SIOP_Y_2025.xlsx",
+      "sha256": "9a5e9ad077bf377dd5d59b790627f6d9954323d04b128e258e546d198a880973",
+      "bytes": 1943727,
+      "sheets": [
+        {
+          "sheet": "BO_DY0002",
+          "rows": 12972,
+          "cols": 29,
+          "nikkei_micro_label_hits": 0
+        }
+      ]
+    },
+    {
+      "label": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/bkk2ed0000005v54-att/SSOP_Y_2023.xlsx",
+      "file": "source_12_SSOP_Y_2023.xlsx",
+      "sha256": "b55ca8dcdfba84d0e2f18bf24a4cb2f91be52662d2c868aa4742896ec14b263b",
+      "bytes": 101226,
+      "sheets": [
+        {
+          "sheet": "BO_DY0003",
+          "rows": 458,
+          "cols": 30,
+          "nikkei_micro_label_hits": 0
+        }
+      ]
+    },
+    {
+      "label": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/mklp77000000phmu-att/SSOP_Y_2024.xlsx",
+      "file": "source_13_SSOP_Y_2024.xlsx",
+      "sha256": "363591f4753e4f73546af94c61f0fce83299c7c20b4ca12679aa678d04661da7",
+      "bytes": 148768,
+      "sheets": [
+        {
+          "sheet": "BO_DY0003",
+          "rows": 810,
+          "cols": 30,
+          "nikkei_micro_label_hits": 0
+        }
+      ]
+    },
+    {
+      "label": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/t13vrt000000gcu1-att/SSOP_Y_2025.xlsx",
+      "file": "source_14_SSOP_Y_2025.xlsx",
+      "sha256": "27bb436a953846e39a6d4c8aac23923f020aeaf33be9d5f0f051876d88ca6078",
+      "bytes": 686574,
+      "sheets": [
+        {
+          "sheet": "BO_DY0003",
+          "rows": 4742,
+          "cols": 30,
+          "nikkei_micro_label_hits": 0
+        }
+      ]
+    },
+    {
+      "label": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/bkk2ed0000005v54-att/JGBFOP_Y_2023.xlsx",
+      "file": "source_15_JGBFOP_Y_2023.xlsx",
+      "sha256": "53e30ad243cde6becb0348aa45dbd72a5a77ff1312b0c6d0e617d7bf625f104e",
+      "bytes": 81194,
+      "sheets": [
+        {
+          "sheet": "BO_DY0004",
+          "rows": 414,
+          "cols": 26,
+          "nikkei_micro_label_hits": 0
+        }
+      ]
+    },
+    {
+      "label": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/mklp77000000phmu-att/JGBFOP_Y_2024.xlsx",
+      "file": "source_16_JGBFOP_Y_2024.xlsx",
+      "sha256": "3c3197948e21ff14e362a60084648076f01a23c76c29a03e5240d85509de2214",
+      "bytes": 74044,
+      "sheets": [
+        {
+          "sheet": "BO_DY0004",
+          "rows": 360,
+          "cols": 26,
+          "nikkei_micro_label_hits": 0
+        }
+      ]
+    },
+    {
+      "label": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/t13vrt000000gcu1-att/JGBFOP_Y_2025.xlsx",
+      "file": "source_17_JGBFOP_Y_2025.xlsx",
+      "sha256": "34ea642f22f756ff49f85ef04ab0fa51e3a194207302f52840cec8f0e3231159",
+      "bytes": 75914,
+      "sheets": [
+        {
+          "sheet": "BO_DY0004",
+          "rows": 385,
+          "cols": 26,
+          "nikkei_micro_label_hits": 0
+        }
+      ]
+    },
+    {
+      "label": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/bkk2ed0000005v54-att/CDFOP_Y_2023.xlsx",
+      "file": "source_18_CDFOP_Y_2023.xlsx",
+      "sha256": "e33c2d97082a96f58773d01d0653db4182d33585c5cb422eda34198e0c75f4d2",
+      "bytes": 29176,
+      "sheets": [
+        {
+          "sheet": "BO_DY0006",
+          "rows": 6,
+          "cols": 28,
+          "nikkei_micro_label_hits": 0
+        }
+      ]
+    },
+    {
+      "label": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/mklp77000000phmu-att/CDFOP_Y_2024.xlsx",
+      "file": "source_19_CDFOP_Y_2024.xlsx",
+      "sha256": "576181fc381f65a65d7a6f2b9b1d0aa1c920a1302cad963bd478f6d093a2624d",
+      "bytes": 29176,
+      "sheets": [
+        {
+          "sheet": "BO_DY0006",
+          "rows": 6,
+          "cols": 28,
+          "nikkei_micro_label_hits": 0
+        }
+      ]
+    },
+    {
+      "label": "",
+      "url": "https://www.jpx.co.jp/markets/statistics-derivatives/yearly-price/t13vrt000000gcu1-att/CDFOP_Y_2025.xlsx",
+      "file": "source_20_CDFOP_Y_2025.xlsx",
+      "sha256": "004c67d49aa66908bb06f4e395cc8862896ed40c32e46581651ca5f242766d9d",
+      "bytes": 29226,
+      "sheets": [
+        {
+          "sheet": "BO_DY0006",
+          "rows": 6,
+          "cols": 28,
+          "nikkei_micro_label_hits": 0
+        }
+      ]
+    }
+  ],
+  "performance_statistics_computed": false,
+  "forbidden": [
+    "returns",
+    "mean_return",
+    "sharpe",
+    "hit_rate",
+    "cumulative_return",
+    "t_stat",
+    "price_change"
+  ]
+}
