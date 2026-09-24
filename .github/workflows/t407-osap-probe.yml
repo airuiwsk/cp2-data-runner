@@ -1,0 +1,36 @@
+name: T407 OSAP non-performance probe
+permissions:
+  contents: write
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "research/t407_osap_probe.py"
+      - ".github/workflows/t407-osap-probe.yml"
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Install package
+        run: pip install openassetpricing pandas
+      - name: Probe source without performance
+        run: python research/t407_osap_probe.py
+      - name: Persist probe evidence
+        run: |
+          mkdir -p evidence/t407-osap-probe
+          cp out/t407-osap-probe/probe.json evidence/t407-osap-probe/probe.json
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add evidence/t407-osap-probe/probe.json
+          if ! git diff --cached --quiet; then
+            git commit -m "Persist T407 OSAP source probe"
+            git push
+          fi
+      - uses: actions/upload-artifact@v4
+        with:
+          name: t407-osap-probe
+          path: out/t407-osap-probe/
+          retention-days: 30
