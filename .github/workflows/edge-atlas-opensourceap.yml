@@ -1,0 +1,27 @@
+name: Edge Atlas OpenSourceAP ingest
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - "research/edge_atlas_ingest_opensourceap.py"
+      - ".github/workflows/edge-atlas-opensourceap.yml"
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - name: Ingest structured public predictor metadata
+        run: python research/edge_atlas_ingest_opensourceap.py
+      - name: Archive and digest
+        run: |
+          tar -C out -czf edge-atlas-opensourceap.tar.gz edge-atlas-opensourceap
+          sha256sum edge-atlas-opensourceap.tar.gz | tee edge-atlas-opensourceap.tar.gz.sha256
+      - uses: actions/upload-artifact@v4
+        with:
+          name: edge-atlas-opensourceap
+          path: |
+            edge-atlas-opensourceap.tar.gz
+            edge-atlas-opensourceap.tar.gz.sha256
+          retention-days: 30
