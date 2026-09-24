@@ -11,15 +11,18 @@ BASE="https://api.bitflyer.com/v1/getexecutions"
 OUT=Path(os.environ.get("T405_OUT","evidence/t405-bitflyer-raw"))
 OUT.mkdir(parents=True,exist_ok=True)
 rawdir=OUT/"raw"; rawdir.mkdir(exist_ok=True)
+# Optional transport-only resume cursor. It must come from an immutable prior raw artifact;
+# it changes neither the frozen sample nor any strategy/performance parameter.
+before_env=os.environ.get("T405_BEFORE")
+page_offset=int(os.environ.get("T405_PAGE_OFFSET","0"))
 
 def parse_ts(s):
     t=datetime.fromisoformat(s.replace("Z","+00:00"))
     return t.replace(tzinfo=timezone.utc) if t.tzinfo is None else t.astimezone(timezone.utc)
 
 def fetch_raw(url):
-    # Transport-only resilience. Retries do not inspect or transform candidate performance.
     for attempt in range(8):
-        req=urllib.request.Request(url,headers={"User-Agent":"Method-X-T405-raw-acquisition/1.1"})
+        req=urllib.request.Request(url,headers={"User-Agent":"Method-X-T405-raw-acquisition/1.2"})
         try:
             with urllib.request.urlopen(req,timeout=30) as r:
                 return r.read(), r.status
@@ -37,7 +40,8 @@ def fetch_raw(url):
     raise RuntimeError("unreachable")
 
 start=parse_ts(START); end=parse_ts(END)
-before=None; page=0; seen=set(); min_ts=None; max_ts=None; duplicate_ids=0; records_in_window=0
+before=int(before_env) if before_env else None
+page=page_offset; seen=set(); min_ts=None; max_ts=None; duplicate_ids=0; records_in_window=0
 chunks=[]
 while True:
     q={"product_code":PRODUCT,"count":"500"}
@@ -70,10 +74,11 @@ while True:
 
 acquired_at=datetime.now(timezone.utc)
 coverage_start_ok=min_ts is not None and min_ts < start
-coverage_end_ok=acquired_at >= end and max_ts is not None and max_ts >= end
+coverage_end_ok=(before_env is None and acquired_at >= end and max_ts is not None and max_ts >= end)
 manifest={
  "trial_id":"T405","mode":"RAW_ONLY_NO_PERFORMANCE","product":PRODUCT,
  "frozen_start":START,"frozen_end_exclusive":END,"acquired_at_utc":acquired_at.isoformat(),
+ "resume_before_id":int(before_env) if before_env else None,"page_offset":page_offset,
  "pages":len(chunks),"unique_execution_ids":len(seen),"duplicate_ids_across_pages":duplicate_ids,
  "records_in_frozen_window":records_in_window,
  "observed_min_exec_date":min_ts.isoformat() if min_ts else None,
@@ -86,6 +91,6 @@ mb=json.dumps(manifest,indent=2,sort_keys=True).encode(); (OUT/"provenance.json"
 (OUT/"provenance.sha256").write_text(hashlib.sha256(mb).hexdigest()+"  provenance.json\n")
 print(json.dumps({k:v for k,v in manifest.items() if k!="chunks"},indent=2))
 if not coverage_start_ok:
-    print("BLOCKED_DATA_RETENTION: API did not reach frozen start",flush=True); raise SystemExit(42)
+    print("BLOCKED_DATA_RETENTION_OR_INCOMPLETE: acquisition segment did not reach frozen start",flush=True); raise SystemExit(42)
 if acquired_at < end:
     print("PARTIAL_EXPECTED: frozen end is still in the future; preserve this snapshot and reacquire after END",flush=True)
