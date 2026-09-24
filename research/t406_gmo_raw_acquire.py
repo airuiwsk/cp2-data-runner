@@ -4,13 +4,13 @@
 Integrity-only acquisition. This program MUST NOT calculate candidate returns,
 PnL, hit rate, Sharpe, event counts, signal thresholds, or pass/fail performance.
 It preserves exact HTTP response bodies plus request/acquisition provenance.
+Collector revision: v1.0.1 (no semantic/data-selection change; smoke-trigger marker).
 """
 from __future__ import annotations
 
 import argparse
 import hashlib
 import json
-import os
 import time
 import urllib.parse
 import urllib.request
@@ -40,7 +40,6 @@ def validate_envelope(raw: bytes) -> None:
         raise RuntimeError(f"GMO status != 0: {obj.get('status')}")
     if not isinstance(obj.get("data", {}).get("list"), list):
         raise RuntimeError("GMO schema sentinel failed: data.list missing")
-    # Deliberately do not inspect prices or compute any candidate statistic.
     for row in obj["data"]["list"]:
         if not all(k in row for k in ("price", "side", "size", "timestamp")):
             raise RuntimeError("GMO schema sentinel failed: trade field missing")
@@ -49,7 +48,7 @@ def validate_envelope(raw: bytes) -> None:
 def main() -> None:
     ap = argparse.ArgumentParser()
     ap.add_argument("--out", default="out/t406-gmo-raw")
-    ap.add_argument("--duration-seconds", type=int, default=14700)  # 4h05m
+    ap.add_argument("--duration-seconds", type=int, default=14700)
     ap.add_argument("--poll-seconds", type=float, default=10.0)
     ap.add_argument("--pages", type=int, default=10)
     ap.add_argument("--count", type=int, default=100)
@@ -76,12 +75,9 @@ def main() -> None:
                         sha = hashlib.sha256(raw).hexdigest()
                         name = f"{seq:09d}_{symbol}_p{page}_{sha[:16]}.json"
                         (rawdir / name).write_bytes(raw)
-                        rec = {
-                            "seq": seq, "symbol": symbol, "page": page,
-                            "request_url": url, "acquired_at_utc": acquired,
-                            "sha256": sha, "bytes": len(raw), "file": f"raw/{name}",
-                            "collector": "t406_gmo_raw_acquire.py/v1",
-                        }
+                        rec = {"seq": seq, "symbol": symbol, "page": page, "request_url": url,
+                               "acquired_at_utc": acquired, "sha256": sha, "bytes": len(raw),
+                               "file": f"raw/{name}", "collector": "t406_gmo_raw_acquire.py/v1.0.1"}
                         mf.write(json.dumps(rec, separators=(",", ":")) + "\n")
                         mf.flush()
                         seq += 1
@@ -91,19 +87,14 @@ def main() -> None:
                                             separators=(",", ":")) + "\n")
                         ef.flush()
                         time.sleep(2)
-            elapsed = time.monotonic() - cycle_start
-            time.sleep(max(0.0, args.poll_seconds - elapsed))
+            time.sleep(max(0.0, args.poll_seconds - (time.monotonic() - cycle_start)))
 
-    summary = {
-        "trial_id": "T406", "purpose": "raw_integrity_only",
-        "run_started_utc": run_started, "run_finished_utc": utc_now(),
-        "symbols": list(SYMBOLS), "pages_per_poll": args.pages, "count_per_page": args.count,
-        "poll_seconds_target": args.poll_seconds,
-        "performance_statistics_computed": False,
-        "manifest_sha256": hashlib.sha256(manifest.read_bytes()).hexdigest(),
-        "manifest_bytes": manifest.stat().st_size,
-        "raw_file_count": seq,
-    }
+    summary = {"trial_id": "T406", "purpose": "raw_integrity_only", "run_started_utc": run_started,
+               "run_finished_utc": utc_now(), "symbols": list(SYMBOLS), "pages_per_poll": args.pages,
+               "count_per_page": args.count, "poll_seconds_target": args.poll_seconds,
+               "performance_statistics_computed": False,
+               "manifest_sha256": hashlib.sha256(manifest.read_bytes()).hexdigest(),
+               "manifest_bytes": manifest.stat().st_size, "raw_file_count": seq}
     (out / "run-summary.json").write_text(json.dumps(summary, indent=2) + "\n", encoding="utf-8")
 
 
