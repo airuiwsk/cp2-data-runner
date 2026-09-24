@@ -42,6 +42,8 @@ def build_bins(records):
     for x in records:
         t=dt(x['exec_date']); b=t.replace(minute=(t.minute//15)*15,second=0,microsecond=0)
         q=float(x['price'])*float(x['size']); side=x['side'].upper()
+        if side=='':
+            continue
         if side not in ('BUY','SELL'): raise SystemExit('invalid side')
         z=bins.setdefault(b,[0.0,0.0]); z[0 if side=='BUY' else 1]+=q
     return bins
