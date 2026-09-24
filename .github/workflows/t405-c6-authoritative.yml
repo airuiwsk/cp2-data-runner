@@ -14,7 +14,7 @@ jobs:
       - uses: actions/checkout@v4
       - name: Verify corrected frozen evaluator blob
         run: |
-          test "$(git hash-object frozen/t405_c6_evaluator.py)" = "6b96d2dcb78cd703c34b56d6d4435e393f72b321"
+          test "$(git hash-object frozen/t405_c6_evaluator.py)" = "15e6e371b5767c934b513bcbb088b5dcf5fa2aa3"
       - name: Non-performance timestamp fixture
         run: |
           python - <<'PY'
@@ -29,6 +29,15 @@ jobs:
           assert m.EXPECTED_N == 1531794
           assert m.EXPECTED_SHA == "bfc8775ca2aa337a82c0a89d157ed4f5d8cb4e132e1cec221df03423da02b855"
           assert (m.HURDLE,m.HIGH,m.CONTROL,m.MIN_N) == (0.002,0.20,0.02,30)
+          synthetic=[
+              {"id":1,"exec_date":"2026-08-24T00:00:01","price":100.0,"size":1.0,"side":"BUY"},
+              {"id":2,"exec_date":"2026-08-24T00:00:02","price":999.0,"size":9.0,"side":""},
+              {"id":3,"exec_date":"2026-08-24T00:00:03","price":100.0,"size":1.0,"side":"SELL"},
+          ]
+          bins=m.build_bins(synthetic)
+          b=next(iter(bins.values()))
+          assert b == [100.0,100.0]
+          assert m.first_at_or_after(synthetic,m.dt("2026-08-24T00:00:02")).get("side") == ""
           print("NON_PERFORMANCE_FIXTURE_PASS")
           PY
       - name: Download immutable T405 raw artifacts
