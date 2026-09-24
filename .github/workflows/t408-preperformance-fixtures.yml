@@ -1,0 +1,16 @@
+name: T408 pre-performance fixtures
+on:
+  push:
+    paths:
+      - 'research/t408_preperformance_fixtures.py'
+  workflow_dispatch:
+jobs:
+  fixtures:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+      - run: pip install yfinance pandas
+      - run: python research/t408_preperformance_fixtures.py
