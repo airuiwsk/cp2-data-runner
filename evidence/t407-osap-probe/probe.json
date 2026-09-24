@@ -1,0 +1,33 @@
+{
+  "package": "openassetpricing",
+  "release_list": null,
+  "requested_portfolio": "op",
+  "requested_predictors": [
+    "MomSeason"
+  ],
+  "rows": 12801,
+  "columns": [
+    "signalname",
+    "port",
+    "date",
+    "ret",
+    "signallag",
+    "Nlong",
+    "Nshort"
+  ],
+  "date_column": "date",
+  "date_coverage_raw": {
+    "min": "1928-01-31",
+    "max": "2024-12-31"
+  },
+  "csv_sha256": "8a522bd36c0d09efeae42801699e669bba5cc078109cbbb5a7fe31dbe1d1b3f4",
+  "csv_bytes": 821898,
+  "performance_statistics_computed": false,
+  "forbidden_statistics": [
+    "mean_return",
+    "sharpe",
+    "hit_rate",
+    "cumulative_return",
+    "t_stat"
+  ]
+}
