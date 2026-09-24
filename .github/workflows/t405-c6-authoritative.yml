@@ -28,10 +28,21 @@ jobs:
             unzip -q a.zip -d "input/s$((i+1))"
             rm a.zip
           done
-      - name: Execute frozen C6 once
-        run: python frozen/t405_c6_evaluator.py input --out T405-c6-result.json
-      - name: Hash result
-        run: sha256sum T405-c6-result.json | tee T405-c6-result.sha256
+      - name: Execute unchanged frozen C6 and capture exact evidence
+        id: eval
+        shell: bash
+        run: |
+          set +e
+          python frozen/t405_c6_evaluator.py input --out T405-c6-result.json >T405-c6-stdout.txt 2>T405-c6-stderr.txt
+          rc=$?
+          echo "$rc" > T405-c6-exit-code.txt
+          cat T405-c6-stdout.txt
+          cat T405-c6-stderr.txt >&2
+          exit $rc
+      - name: Hash result when present
+        if: always()
+        run: |
+          if [ -f T405-c6-result.json ]; then sha256sum T405-c6-result.json | tee T405-c6-result.sha256; fi
       - uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -39,4 +50,7 @@ jobs:
           path: |
             T405-c6-result.json
             T405-c6-result.sha256
-          if-no-files-found: warn
+            T405-c6-stdout.txt
+            T405-c6-stderr.txt
+            T405-c6-exit-code.txt
+          if-no-files-found: error
