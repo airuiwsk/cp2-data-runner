@@ -11,7 +11,11 @@ EXPECTED_N=1531794
 EXPECTED_SHA="bfc8775ca2aa337a82c0a89d157ed4f5d8cb4e132e1cec221df03423da02b855"
 HURDLE=0.002; HIGH=0.20; CONTROL=0.02; MIN_N=30
 
-def dt(s): return datetime.fromisoformat(s.replace('Z','+00:00'))
+def dt(s):
+    t=datetime.fromisoformat(s.replace('Z','+00:00'))
+    if t.tzinfo is None:
+        t=t.replace(tzinfo=timezone.utc)
+    return t.astimezone(timezone.utc)
 def canonical(records):
     h=hashlib.sha256()
     for x in sorted(records,key=lambda z:int(z['id'])):
