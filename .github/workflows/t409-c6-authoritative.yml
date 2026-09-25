@@ -1,0 +1,36 @@
+name: T409 C6 authoritative
+
+on:
+  push:
+    paths:
+      - "research/T409_C6_TRIGGER.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  c6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip -q install pandas
+      - name: Verify frozen evaluator blob
+        run: |
+          test "$(git hash-object research/t409_c6_evaluator.py)" = "2fe0e735a76f812d7f54ae9d86fe067edb1ac921"
+      - name: Download frozen T409 DI artifact
+        run: gh run download 36163324829 -n t409-spy-di -D input
+      - name: Execute frozen T409 C6 once
+        run: python research/t409_c6_evaluator.py input/t409_spy_raw.csv
+      - uses: actions/upload-artifact@v4
+        with:
+          name: t409-c6-result
+          path: t409_c6_result.json
+          if-no-files-found: error
