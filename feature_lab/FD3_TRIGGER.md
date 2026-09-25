@@ -1,0 +1,1 @@
+FD3 frozen synthetic tournament trigger. No real market data.\n
