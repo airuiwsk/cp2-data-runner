@@ -1,0 +1,8 @@
+name: GitHub write probe 20260926
+on:
+  workflow_dispatch:
+jobs:
+  probe:
+    runs-on: ubuntu-latest
+    steps:
+      - run: echo "github write probe"
