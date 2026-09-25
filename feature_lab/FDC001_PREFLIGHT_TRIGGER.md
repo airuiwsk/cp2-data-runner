@@ -1,0 +1,1 @@
+FDC001 GLD D0-only preflight trigger. D2/D3 forbidden. No performance.\n
