@@ -1,0 +1,1 @@
+FD4 execution-aware engine synthetic proof trigger. No real market data.\n
