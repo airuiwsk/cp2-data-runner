@@ -1,0 +1,20 @@
+name: t409-spy-di
+on:
+  workflow_dispatch:
+  push:
+    paths: ['research/t409_spy_di.py']
+jobs:
+  di:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with: {python-version: '3.12'}
+      - run: pip -q install yfinance
+      - run: python research/t409_spy_di.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: t409-spy-di
+          path: |
+            t409_spy_raw.csv
+            t409_spy_di.json
