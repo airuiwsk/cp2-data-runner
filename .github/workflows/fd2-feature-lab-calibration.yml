@@ -1,0 +1,31 @@
+name: FD2 Feature Lab Calibration
+
+on:
+  push:
+    paths:
+      - "feature_lab/calibrate_fd2.py"
+      - ".github/workflows/fd2-feature-lab-calibration.yml"
+      - "feature_lab/FD2_TRIGGER.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fd2:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run frozen FD2 calibration
+        working-directory: feature_lab
+        run: python calibrate_fd2.py --out fd2-calibration-report.json
+      - name: Upload FD2 report
+        uses: actions/upload-artifact@v4
+        with:
+          name: fd2-feature-lab-calibration
+          path: feature_lab/fd2-calibration-report.json
+          if-no-files-found: error
