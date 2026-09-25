@@ -11,7 +11,8 @@ from pathlib import Path
 REQUIRED = [
     "fdc_id","status","objective","market_surface","instruments","data_source",
     "d0_search_window","d1_walk_forward_folds","d2_sealed_confirmation","d3_reserved_cp5",
-    "label_definition","primary_discovery_objective","action_mapping","decision_timing","execution_price_semantics",\n    "baseline","turnover_definition","cost_model","capital_jpy","dsl_version",
+    "label_definition","primary_discovery_objective","action_mapping","decision_timing","execution_price_semantics",
+    "baseline","turnover_definition","cost_model","capital_jpy","dsl_version",
     "generators","evaluation_budget_by_generator","random_seeds","max_ast_depth",
     "max_complexity","ranking_rule","turnover_cap","minimum_n","champion_count",
     "null_control","positive_control","forbidden_data","lineage"
@@ -94,7 +95,8 @@ def main():
     if args.freeze:
         m["status"]="FROZEN"
         m["manifest_sha256"]=manifest_hash(m)
-        p.write_text(json.dumps(m,indent=2,sort_keys=True)+"\n")
+        p.write_text(json.dumps(m,indent=2,sort_keys=True)+"
+")
     print(json.dumps(validate_manifest(m,require_frozen_hash=True),sort_keys=True))
 
 
