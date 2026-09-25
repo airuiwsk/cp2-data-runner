@@ -33,3 +33,4 @@ checks["pass"]=bool(checks["rows"]>4000 and checks["date_min"]<="2007-01-05" and
 open(META,"w").write(json.dumps(checks,indent=2))
 print(json.dumps(checks))
 sys.exit(0 if checks["pass"] else 2)
+# DI trigger 2026-09-26T04:53+09:00 — no performance semantics changed
