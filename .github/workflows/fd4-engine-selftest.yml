@@ -1,0 +1,26 @@
+name: FD4 Execution-Aware Engine Proof
+
+on:
+  push:
+    paths:
+      - "feature_lab/fdc001_search_engine.py"
+      - ".github/workflows/fd4-engine-selftest.yml"
+      - "feature_lab/FD4_ENGINE_TRIGGER.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  proof:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip -q install pandas
+      - name: Run synthetic execution-aware proof
+        working-directory: feature_lab
+        run: python fdc001_search_engine.py --selftest
