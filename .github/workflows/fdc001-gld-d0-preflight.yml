@@ -1,0 +1,32 @@
+name: FDC001 GLD D0 preflight
+
+on:
+  push:
+    paths:
+      - "feature_lab/fdc001_gld_d0_preflight.py"
+      - ".github/workflows/fdc001-gld-d0-preflight.yml"
+      - "feature_lab/FDC001_PREFLIGHT_TRIGGER.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip -q install yfinance pandas
+      - name: Fetch D0 only and validate schema
+        run: python feature_lab/fdc001_gld_d0_preflight.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: fdc001-gld-d0-preflight
+          path: |
+            fdc001_gld_d0_raw.csv
+            fdc001_gld_d0_preflight.json
+          if-no-files-found: error
