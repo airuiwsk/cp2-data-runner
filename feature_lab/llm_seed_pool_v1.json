@@ -1,0 +1,500 @@
+{
+  "version": "llm-seed-pool-v1",
+  "created_for": "FD3 synthetic tournament",
+  "generated_blind_to_fd3_results": true,
+  "performance_feedback_used": false,
+  "seeds": [
+    {
+      "type": "op",
+      "op": "lag",
+      "args": [
+        {
+          "type": "field",
+          "name": "x0"
+        }
+      ],
+      "params": {
+        "n": 1
+      }
+    },
+    {
+      "type": "op",
+      "op": "lag",
+      "args": [
+        {
+          "type": "field",
+          "name": "x0"
+        }
+      ],
+      "params": {
+        "n": 3
+      }
+    },
+    {
+      "type": "op",
+      "op": "lag",
+      "args": [
+        {
+          "type": "field",
+          "name": "x1"
+        }
+      ],
+      "params": {
+        "n": 1
+      }
+    },
+    {
+      "type": "op",
+      "op": "lag",
+      "args": [
+        {
+          "type": "field",
+          "name": "x1"
+        }
+      ],
+      "params": {
+        "n": 3
+      }
+    },
+    {
+      "type": "op",
+      "op": "lag",
+      "args": [
+        {
+          "type": "field",
+          "name": "x2"
+        }
+      ],
+      "params": {
+        "n": 1
+      }
+    },
+    {
+      "type": "op",
+      "op": "lag",
+      "args": [
+        {
+          "type": "field",
+          "name": "x2"
+        }
+      ],
+      "params": {
+        "n": 3
+      }
+    },
+    {
+      "type": "op",
+      "op": "lag",
+      "args": [
+        {
+          "type": "field",
+          "name": "x3"
+        }
+      ],
+      "params": {
+        "n": 1
+      }
+    },
+    {
+      "type": "op",
+      "op": "lag",
+      "args": [
+        {
+          "type": "field",
+          "name": "x3"
+        }
+      ],
+      "params": {
+        "n": 3
+      }
+    },
+    {
+      "type": "op",
+      "op": "sign",
+      "args": [
+        {
+          "type": "op",
+          "op": "lag",
+          "args": [
+            {
+              "type": "field",
+              "name": "x0"
+            }
+          ],
+          "params": {
+            "n": 1
+          }
+        }
+      ],
+      "params": {}
+    },
+    {
+      "type": "op",
+      "op": "sign",
+      "args": [
+        {
+          "type": "op",
+          "op": "lag",
+          "args": [
+            {
+              "type": "field",
+              "name": "x1"
+            }
+          ],
+          "params": {
+            "n": 1
+          }
+        }
+      ],
+      "params": {}
+    },
+    {
+      "type": "op",
+      "op": "sign",
+      "args": [
+        {
+          "type": "op",
+          "op": "lag",
+          "args": [
+            {
+              "type": "field",
+              "name": "x2"
+            }
+          ],
+          "params": {
+            "n": 1
+          }
+        }
+      ],
+      "params": {}
+    },
+    {
+      "type": "op",
+      "op": "sign",
+      "args": [
+        {
+          "type": "op",
+          "op": "lag",
+          "args": [
+            {
+              "type": "field",
+              "name": "x3"
+            }
+          ],
+          "params": {
+            "n": 1
+          }
+        }
+      ],
+      "params": {}
+    },
+    {
+      "type": "op",
+      "op": "rolling_mean",
+      "args": [
+        {
+          "type": "op",
+          "op": "lag",
+          "args": [
+            {
+              "type": "field",
+              "name": "x0"
+            }
+          ],
+          "params": {
+            "n": 1
+          }
+        }
+      ],
+      "params": {
+        "window": 3
+      }
+    },
+    {
+      "type": "op",
+      "op": "rolling_mean",
+      "args": [
+        {
+          "type": "op",
+          "op": "lag",
+          "args": [
+            {
+              "type": "field",
+              "name": "x1"
+            }
+          ],
+          "params": {
+            "n": 1
+          }
+        }
+      ],
+      "params": {
+        "window": 3
+      }
+    },
+    {
+      "type": "op",
+      "op": "rolling_mean",
+      "args": [
+        {
+          "type": "op",
+          "op": "lag",
+          "args": [
+            {
+              "type": "field",
+              "name": "x2"
+            }
+          ],
+          "params": {
+            "n": 1
+          }
+        }
+      ],
+      "params": {
+        "window": 3
+      }
+    },
+    {
+      "type": "op",
+      "op": "rolling_mean",
+      "args": [
+        {
+          "type": "op",
+          "op": "lag",
+          "args": [
+            {
+              "type": "field",
+              "name": "x3"
+            }
+          ],
+          "params": {
+            "n": 1
+          }
+        }
+      ],
+      "params": {
+        "window": 3
+      }
+    },
+    {
+      "type": "op",
+      "op": "zscore",
+      "args": [
+        {
+          "type": "op",
+          "op": "lag",
+          "args": [
+            {
+              "type": "field",
+              "name": "x0"
+            }
+          ],
+          "params": {
+            "n": 1
+          }
+        }
+      ],
+      "params": {
+        "window": 5
+      }
+    },
+    {
+      "type": "op",
+      "op": "zscore",
+      "args": [
+        {
+          "type": "op",
+          "op": "lag",
+          "args": [
+            {
+              "type": "field",
+              "name": "x1"
+            }
+          ],
+          "params": {
+            "n": 1
+          }
+        }
+      ],
+      "params": {
+        "window": 5
+      }
+    },
+    {
+      "type": "op",
+      "op": "zscore",
+      "args": [
+        {
+          "type": "op",
+          "op": "lag",
+          "args": [
+            {
+              "type": "field",
+              "name": "x2"
+            }
+          ],
+          "params": {
+            "n": 1
+          }
+        }
+      ],
+      "params": {
+        "window": 5
+      }
+    },
+    {
+      "type": "op",
+      "op": "zscore",
+      "args": [
+        {
+          "type": "op",
+          "op": "lag",
+          "args": [
+            {
+              "type": "field",
+              "name": "x3"
+            }
+          ],
+          "params": {
+            "n": 1
+          }
+        }
+      ],
+      "params": {
+        "window": 5
+      }
+    },
+    {
+      "type": "op",
+      "op": "sub",
+      "args": [
+        {
+          "type": "op",
+          "op": "lag",
+          "args": [
+            {
+              "type": "field",
+              "name": "x0"
+            }
+          ],
+          "params": {
+            "n": 1
+          }
+        },
+        {
+          "type": "op",
+          "op": "lag",
+          "args": [
+            {
+              "type": "field",
+              "name": "x1"
+            }
+          ],
+          "params": {
+            "n": 1
+          }
+        }
+      ],
+      "params": {}
+    },
+    {
+      "type": "op",
+      "op": "sub",
+      "args": [
+        {
+          "type": "op",
+          "op": "lag",
+          "args": [
+            {
+              "type": "field",
+              "name": "x2"
+            }
+          ],
+          "params": {
+            "n": 1
+          }
+        },
+        {
+          "type": "op",
+          "op": "lag",
+          "args": [
+            {
+              "type": "field",
+              "name": "x3"
+            }
+          ],
+          "params": {
+            "n": 1
+          }
+        }
+      ],
+      "params": {}
+    },
+    {
+      "type": "op",
+      "op": "mul",
+      "args": [
+        {
+          "type": "op",
+          "op": "lag",
+          "args": [
+            {
+              "type": "field",
+              "name": "x0"
+            }
+          ],
+          "params": {
+            "n": 1
+          }
+        },
+        {
+          "type": "op",
+          "op": "lag",
+          "args": [
+            {
+              "type": "field",
+              "name": "x1"
+            }
+          ],
+          "params": {
+            "n": 1
+          }
+        }
+      ],
+      "params": {}
+    },
+    {
+      "type": "op",
+      "op": "mul",
+      "args": [
+        {
+          "type": "op",
+          "op": "lag",
+          "args": [
+            {
+              "type": "field",
+              "name": "x2"
+            }
+          ],
+          "params": {
+            "n": 1
+          }
+        },
+        {
+          "type": "op",
+          "op": "lag",
+          "args": [
+            {
+              "type": "field",
+              "name": "x3"
+            }
+          ],
+          "params": {
+            "n": 1
+          }
+        }
+      ],
+      "params": {}
+    }
+  ]
+}
