@@ -6,6 +6,7 @@ import yfinance as yf
 OUT="t409_spy_raw.csv"
 META="t409_spy_di.json"
 
+# Execution trigger only; frozen DI semantics unchanged.
 df=yf.download("SPY",start="2007-01-01",end="2026-01-01",auto_adjust=False,actions=False,progress=False)
 if isinstance(df.columns,pd.MultiIndex):
     df.columns=[c[0] for c in df.columns]
