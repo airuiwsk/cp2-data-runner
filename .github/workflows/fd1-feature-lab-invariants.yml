@@ -21,7 +21,7 @@ jobs:
           python-version: "3.11"
       - name: Run synthetic FD1 invariants
         working-directory: feature_lab
-        run: python synthetic_fd1.py --out fd1-report.json
+        run: |\n          python synthetic_fd1.py --out fd1-report.json\n          python manifest_selftest.py
       - name: Upload FD1 report
         uses: actions/upload-artifact@v4
         with:
