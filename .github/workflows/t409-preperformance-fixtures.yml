@@ -1,0 +1,35 @@
+name: T409 pre-performance fixtures
+
+on:
+  push:
+    paths:
+      - "research/t409_preperformance_fixtures.py"
+      - ".github/workflows/t409-preperformance-fixtures.yml"
+      - "research/T409_FIXTURE_TRIGGER.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  fixtures:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    env:
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip -q install pandas
+      - name: Download frozen T409 DI artifact
+        run: gh run download 36163324829 -n t409-spy-di -D input
+      - name: Run non-performance fixtures
+        run: python research/t409_preperformance_fixtures.py input/t409_spy_raw.csv input/t409_spy_di.json
+      - uses: actions/upload-artifact@v4
+        with:
+          name: t409-preperformance-fixture
+          path: t409_preperformance_fixture.json
+          if-no-files-found: error
