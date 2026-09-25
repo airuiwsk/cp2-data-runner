@@ -1,0 +1,32 @@
+name: FD3 Feature Lab Tournament
+
+on:
+  push:
+    paths:
+      - "feature_lab/tournament_fd3.py"
+      - "feature_lab/llm_seed_pool_v1.json"
+      - ".github/workflows/fd3-feature-lab-tournament.yml"
+      - "feature_lab/FD3_TRIGGER.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fd3:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run frozen FD3 tournament
+        working-directory: feature_lab
+        run: python tournament_fd3.py --out fd3-tournament-report.json
+      - name: Upload FD3 report
+        uses: actions/upload-artifact@v4
+        with:
+          name: fd3-feature-lab-tournament
+          path: feature_lab/fd3-tournament-report.json
+          if-no-files-found: error
