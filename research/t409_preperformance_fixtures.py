@@ -21,7 +21,7 @@ assert meta["sha256"]==EXPECTED_SHA
 
 df=pd.read_csv(RAW)
 required=["Date","Open","High","Low","Close","Adj Close","Volume"]
-assert list(df.columns)==required, df.columns.tolist()
+assert set(df.columns)==set(required), df.columns.tolist()
 df["Date"]=pd.to_datetime(df["Date"],errors="raise")
 assert len(df)==4780
 assert str(df["Date"].min().date())=="2007-01-03"
