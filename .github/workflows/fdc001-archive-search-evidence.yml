@@ -1,0 +1,47 @@
+name: FDC001 Archive Search Evidence
+
+on:
+  push:
+    paths:
+      - "FDC001_ARCHIVE_TRIGGER.md"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  archive:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download exact completed search artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p /tmp/fdc001-search
+          curl -fL             -H "Authorization: Bearer $GH_TOKEN"             -H "Accept: application/vnd.github+json"             "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/10902997283/zip"             -o /tmp/fdc001-search.zip
+          unzip -o /tmp/fdc001-search.zip -d /tmp/fdc001-search
+          test -f /tmp/fdc001-search/fdc001_search_ledger.jsonl
+          echo "c6d01763f80f5deee818f4d0af25fcd9f362e56a323baf36246d7ea860e1dce2  /tmp/fdc001-search/fdc001_search_ledger.jsonl" | sha256sum -c -
+          echo "a1fd3c2ff4af31b8d78903f36e847a0d01df202950c2b7db9d03f228cceff12f  /tmp/fdc001-search/fdc001_search_summary.json" | sha256sum -c -
+          echo "5891533099ba2fbcd9f65d18440f8db3331a04dc013f122c378ffdaf0cbff251  /tmp/fdc001-search/fdc001_champion.json" | sha256sum -c -
+      - name: Archive exact evidence in Git
+        run: |
+          set -euo pipefail
+          mkdir -p evidence/fdc001-search
+          cp /tmp/fdc001-search/fdc001_search_summary.json evidence/fdc001-search/
+          cp /tmp/fdc001-search/fdc001_champion.json evidence/fdc001-search/
+          cp /tmp/fdc001-search/fdc001_run_identity.json evidence/fdc001-search/
+          gzip -n -c /tmp/fdc001-search/fdc001_search_ledger.jsonl > evidence/fdc001-search/fdc001_search_ledger.jsonl.gz
+          sha256sum evidence/fdc001-search/* > evidence/fdc001-search/SHA256SUMS
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add evidence/fdc001-search
+          git diff --cached --quiet && exit 0
+          git commit -m "Archive FDC001 complete D0-D1 search evidence"
+          git push origin HEAD:main
