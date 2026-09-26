@@ -1,0 +1,144 @@
+{
+  "discovery_summary": {
+    "complexity": 11,
+    "eligible": true,
+    "folds": [
+      {
+        "cash_fraction": 0.30417495029821073,
+        "coverage": 1.0,
+        "incremental_mean_vs_always_long": 0.00040991392627023703,
+        "long_fraction": 0.6958250497017893,
+        "n": 503,
+        "state_changes": 48,
+        "state_changes_per_252": 24.047713717693835,
+        "strategy_mean_net": 0.0011159497913479331,
+        "structural_pass": true
+      },
+      {
+        "cash_fraction": 0.43339960238568587,
+        "coverage": 1.0,
+        "incremental_mean_vs_always_long": -0.0008638813695322357,
+        "long_fraction": 0.5666003976143141,
+        "n": 503,
+        "state_changes": 52,
+        "state_changes_per_252": 26.05168986083499,
+        "strategy_mean_net": 0.00014428818185866657,
+        "structural_pass": true
+      },
+      {
+        "cash_fraction": 0.4610778443113772,
+        "coverage": 1.0,
+        "incremental_mean_vs_always_long": 3.3177739702200457e-05,
+        "long_fraction": 0.5389221556886228,
+        "n": 501,
+        "state_changes": 58,
+        "state_changes_per_252": 29.17365269461078,
+        "strategy_mean_net": 0.0003980568802129902,
+        "structural_pass": true
+      },
+      {
+        "cash_fraction": 0.31610337972167,
+        "coverage": 1.0,
+        "incremental_mean_vs_always_long": 0.0008229291157658672,
+        "long_fraction": 0.68389662027833,
+        "n": 503,
+        "state_changes": 68,
+        "state_changes_per_252": 34.067594433399606,
+        "strategy_mean_net": 0.00017980322210620165,
+        "structural_pass": true
+      },
+      {
+        "cash_fraction": 0.3280318091451292,
+        "coverage": 1.0,
+        "incremental_mean_vs_always_long": 0.00027333270657450446,
+        "long_fraction": 0.6719681908548708,
+        "n": 503,
+        "state_changes": 58,
+        "state_changes_per_252": 29.05765407554672,
+        "strategy_mean_net": 0.00027868487928304174,
+        "structural_pass": true
+      }
+    ],
+    "median_incremental": 0.00027333270657450446,
+    "median_state_changes_per_252": 29.05765407554672,
+    "median_strategy": 0.00027868487928304174,
+    "min_incremental": -0.0008638813695322357,
+    "positive_incremental_folds": 4,
+    "positive_strategy_folds": 5,
+    "reason": null,
+    "valid": true
+  },
+  "evaluation_index": 3251,
+  "expression_hash": "8dec4676de54bb28a964131b1344f85368f590db53fab9049614e351c8ab9f10",
+  "normalized_ast": {
+    "args": [
+      {
+        "args": [
+          {
+            "args": [
+              {
+                "args": [
+                  {
+                    "name": "ret1",
+                    "type": "field"
+                  },
+                  {
+                    "name": "volume_chg1",
+                    "type": "field"
+                  }
+                ],
+                "op": "protected_div",
+                "params": {},
+                "type": "op"
+              }
+            ],
+            "op": "rolling_mean",
+            "params": {
+              "window": 10
+            },
+            "type": "op"
+          },
+          {
+            "args": [
+              {
+                "name": "ret1",
+                "type": "field"
+              }
+            ],
+            "op": "rolling_std",
+            "params": {
+              "window": 3
+            },
+            "type": "op"
+          }
+        ],
+        "op": "add",
+        "params": {},
+        "type": "op"
+      },
+      {
+        "args": [
+          {
+            "args": [
+              {
+                "name": "range1",
+                "type": "field"
+              }
+            ],
+            "op": "lag",
+            "params": {
+              "n": 10
+            },
+            "type": "op"
+          }
+        ],
+        "op": "sign",
+        "params": {},
+        "type": "op"
+      }
+    ],
+    "op": "mul",
+    "params": {},
+    "type": "op"
+  }
+}

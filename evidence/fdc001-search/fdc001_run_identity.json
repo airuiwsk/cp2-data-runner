@@ -1,0 +1,14 @@
+{
+  "champion_present": true,
+  "champion_sha256": "5891533099ba2fbcd9f65d18440f8db3331a04dc013f122c378ffdaf0cbff251",
+  "d0_raw_sha256": "5e0d68437ae2f5b88ea051456a0aa0fc9a69cf1a4e20acbf07216cad3b92a395",
+  "d2_loaded": false,
+  "d3_loaded": false,
+  "engine_blob": "1c86edb6d090c9bd9cd3ebd5f6a6220676632532",
+  "engine_commit": "1c88d6ea4448ea3b8001deeb491161c20afd52ba",
+  "ledger_rows": 5000,
+  "ledger_sha256": "c6d01763f80f5deee818f4d0af25fcd9f362e56a323baf36246d7ea860e1dce2",
+  "manifest_sha256": "5cde95bed6b9af5beb199d5ca48a6fdc98d4792d51b38c4eb979355a2808c7fd",
+  "raw_evaluations": 5000,
+  "summary_sha256": "a1fd3c2ff4af31b8d78903f36e847a0d01df202950c2b7db9d03f228cceff12f"
+}
