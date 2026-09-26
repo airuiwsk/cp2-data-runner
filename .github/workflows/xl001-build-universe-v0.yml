@@ -1,0 +1,30 @@
+name: XL001 Build Timestamp Universe v0
+
+on:
+  push:
+    paths:
+      - "xl001_build_universe_v0.py"
+      - ".github/workflows/xl001-build-universe-v0.yml"
+      - "XL001_UNIVERSE_V0_TRIGGER.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Build frozen outcome-blind universe
+        run: python xl001_build_universe_v0.py
+      - name: Upload universe
+        uses: actions/upload-artifact@v4
+        with:
+          name: xl001-timestamp-universe-v0
+          path: xl001-timestamp-universe-v0.json
+          if-no-files-found: error
