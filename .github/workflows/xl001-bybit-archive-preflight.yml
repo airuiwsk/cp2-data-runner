@@ -1,0 +1,30 @@
+name: XL001 Bybit Archive Preflight
+
+on:
+  push:
+    paths:
+      - "xl001_bybit_archive_preflight.py"
+      - ".github/workflows/xl001-bybit-archive-preflight.yml"
+      - "XL001_ARCHIVE_TRIGGER.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run non-performance archive preflight
+        run: python xl001_bybit_archive_preflight.py
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: xl001-bybit-archive-preflight
+          path: xl001-bybit-archive-preflight.json
+          if-no-files-found: error
