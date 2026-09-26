@@ -1,0 +1,45 @@
+name: T410 Frozen C6
+
+on:
+  push:
+    paths:
+      - "T410_C6_TRIGGER.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  c6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip -q install pandas
+      - name: Verify evaluator blob identity
+        run: |
+          python - <<'PY'
+          import hashlib
+          from pathlib import Path
+          p=Path("t410_c6_evaluator.py")
+          print("evaluator_sha256", hashlib.sha256(p.read_bytes()).hexdigest())
+          PY
+      - name: Download authoritative DI artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          mkdir -p evidence/t410-qqq-di
+          curl -fL             -H "Authorization: Bearer $GH_TOKEN"             -H "Accept: application/vnd.github+json"             "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/10901625912/zip"             -o /tmp/t410-di.zip
+          unzip -o /tmp/t410-di.zip -d evidence/t410-qqq-di
+      - name: Execute exactly one frozen C6
+        run: python t410_c6_evaluator.py
+      - name: Upload C6 result
+        uses: actions/upload-artifact@v4
+        with:
+          name: t410-c6-result
+          path: evidence/t410-c6/
+          if-no-files-found: error
