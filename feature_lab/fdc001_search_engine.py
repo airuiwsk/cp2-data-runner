@@ -295,7 +295,7 @@ def synthetic_frame():
     r=random.Random(991)
     dates=pd.bdate_range("2005-01-03","2016-12-30")
     n=len(dates)
-    sig=[r.choice([-0.008,0.008]) for _ in range(n)]
+    sig=[0.008]\n    for _ in range(1,n):\n        sig.append(sig[-1] if r.random()<0.85 else -sig[-1])
     close=[100.0]
     for i in range(1,n):
         close.append(close[-1]*(1+sig[i]))
