@@ -1,0 +1,1 @@
+T410 structural fixture trigger. Uses exact DI raw SHA; no performance computation.\n
