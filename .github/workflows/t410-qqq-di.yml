@@ -1,0 +1,31 @@
+name: T410 QQQ Data Integrity
+
+on:
+  push:
+    paths:
+      - "t410_qqq_di.py"
+      - ".github/workflows/t410-qqq-di.yml"
+      - "T410_DI_TRIGGER.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  integrity:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip -q install pandas yfinance
+      - name: Run candidate-specific non-performance DI
+        run: python t410_qqq_di.py
+      - name: Upload DI evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: t410-qqq-di
+          path: evidence/t410-qqq-di/
+          if-no-files-found: error
