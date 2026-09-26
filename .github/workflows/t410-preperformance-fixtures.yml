@@ -1,0 +1,39 @@
+name: T410 Preperformance Fixtures
+
+on:
+  push:
+    paths:
+      - "research/t410_preperformance_fixtures.py"
+      - ".github/workflows/t410-preperformance-fixtures.yml"
+      - "research/T410_FIXTURE_TRIGGER.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  fixtures:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip -q install pandas
+      - name: Download frozen T410 DI artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: t410-qqq-di
+          path: input
+          github-token: ${{ github.token }}
+          repository: airuiwsk/cp2-data-runner
+          run-id: 36228115807
+      - name: Run non-performance fixtures
+        run: python research/t410_preperformance_fixtures.py input/t410_qqq_raw.csv input/t410_qqq_di.json
+      - name: Upload fixture evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: t410-preperformance-fixtures
+          path: t410_preperformance_fixture.json
+          if-no-files-found: error
