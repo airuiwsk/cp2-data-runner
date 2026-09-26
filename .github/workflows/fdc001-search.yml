@@ -1,0 +1,109 @@
+name: FDC001 Frozen D0-D1 Search
+
+on:
+  push:
+    paths:
+      - "FDC001_SEARCH_TRIGGER.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  search:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout orchestration head
+        uses: actions/checkout@v4
+        with:
+          path: current
+
+      - name: Checkout exact frozen engine commit
+        uses: actions/checkout@v4
+        with:
+          ref: 1c88d6ea4448ea3b8001deeb491161c20afd52ba
+          path: frozen_runner
+          persist-credentials: false
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install deterministic dependencies
+        run: pip -q install pandas
+
+      - name: Verify frozen code identity and manifest
+        run: |
+          set -euo pipefail
+          test "$(git -C frozen_runner rev-parse HEAD)" = "1c88d6ea4448ea3b8001deeb491161c20afd52ba"
+          test "$(git -C frozen_runner rev-parse HEAD:feature_lab/fdc001_search_engine.py)" = "1c86edb6d090c9bd9cd3ebd5f6a6220676632532"
+          python frozen_runner/feature_lab/manifest.py current/feature_lab/campaigns/FDC001-manifest-frozen.json
+
+      - name: Download exact D0-only preflight artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p current/evidence/fdc001-d0
+          curl -fL             -H "Authorization: Bearer $GH_TOKEN"             -H "Accept: application/vnd.github+json"             "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/10885285380/zip"             -o /tmp/fdc001-d0.zip
+          unzip -o /tmp/fdc001-d0.zip -d current/evidence/fdc001-d0
+          test -f current/evidence/fdc001-d0/fdc001_gld_d0_raw.csv
+          echo "5e0d68437ae2f5b88ea051456a0aa0fc9a69cf1a4e20acbf07216cad3b92a395  current/evidence/fdc001-d0/fdc001_gld_d0_raw.csv" | sha256sum -c -
+          if find current/evidence/fdc001-d0 -type f | grep -Ei '(^|[/_-])d[23]([/_-]|$)'; then
+            echo "Forbidden D2/D3 file found in D0 artifact" >&2
+            exit 2
+          fi
+
+      - name: Execute frozen D0-D1 contaminated discovery search
+        run: |
+          set -euo pipefail
+          mkdir -p current/evidence/fdc001-search
+          cd frozen_runner/feature_lab
+          python fdc001_search_engine.py             --manifest "$GITHUB_WORKSPACE/current/feature_lab/campaigns/FDC001-manifest-frozen.json"             --raw "$GITHUB_WORKSPACE/current/evidence/fdc001-d0/fdc001_gld_d0_raw.csv"             --out-prefix "$GITHUB_WORKSPACE/current/evidence/fdc001-search/fdc001"
+
+      - name: Verify search outputs and preserve run identity
+        run: |
+          set -euo pipefail
+          test -f current/evidence/fdc001-search/fdc001_search_ledger.jsonl
+          test -f current/evidence/fdc001-search/fdc001_search_summary.json
+          python - <<'PY'
+          import hashlib, json
+          from pathlib import Path
+          base=Path("current/evidence/fdc001-search")
+          summary=json.loads((base/"fdc001_search_summary.json").read_text())
+          assert summary["fdc_id"]=="FDC001"
+          assert summary["manifest_sha256"]=="5cde95bed6b9af5beb199d5ca48a6fdc98d4792d51b38c4eb979355a2808c7fd"
+          assert summary["d0_raw_sha256"]=="5e0d68437ae2f5b88ea051456a0aa0fc9a69cf1a4e20acbf07216cad3b92a395"
+          assert summary["raw_evaluations"]==5000
+          assert summary["d2_loaded"] is False
+          assert summary["d3_loaded"] is False
+          led=base/"fdc001_search_ledger.jsonl"
+          rows=sum(1 for _ in led.open())
+          assert rows==5000
+          identity={
+            "engine_commit":"1c88d6ea4448ea3b8001deeb491161c20afd52ba",
+            "engine_blob":"1c86edb6d090c9bd9cd3ebd5f6a6220676632532",
+            "manifest_sha256":summary["manifest_sha256"],
+            "d0_raw_sha256":summary["d0_raw_sha256"],
+            "raw_evaluations":summary["raw_evaluations"],
+            "ledger_rows":rows,
+            "ledger_sha256":hashlib.sha256(led.read_bytes()).hexdigest(),
+            "summary_sha256":hashlib.sha256((base/"fdc001_search_summary.json").read_bytes()).hexdigest(),
+            "champion_present":summary.get("champion") is not None,
+            "d2_loaded":False,
+            "d3_loaded":False,
+          }
+          if (base/"fdc001_champion.json").exists():
+            identity["champion_sha256"]=hashlib.sha256((base/"fdc001_champion.json").read_bytes()).hexdigest()
+          (base/"fdc001_run_identity.json").write_text(json.dumps(identity,indent=2,sort_keys=True)+"\n")
+          print(json.dumps(identity,sort_keys=True))
+          PY
+
+      - name: Upload complete auditable D0-D1 search evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: fdc001-d0-d1-search
+          path: current/evidence/fdc001-search/
+          if-no-files-found: error
