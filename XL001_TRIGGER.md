@@ -1,0 +1,1 @@
+XL001 non-performance preflight trigger. No return/PnL/statistical edge computation.\n
