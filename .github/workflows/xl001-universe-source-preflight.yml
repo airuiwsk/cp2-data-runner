@@ -1,0 +1,30 @@
+name: XL001 Universe Source Preflight
+
+on:
+  push:
+    paths:
+      - "xl001_universe_source_preflight.py"
+      - ".github/workflows/xl001-universe-source-preflight.yml"
+      - "XL001_UNIVERSE_TRIGGER.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Run event-universe source preflight
+        run: python xl001_universe_source_preflight.py
+      - name: Upload report
+        uses: actions/upload-artifact@v4
+        with:
+          name: xl001-universe-source-preflight
+          path: xl001-universe-source-preflight.json
+          if-no-files-found: error
