@@ -1,0 +1,38 @@
+name: T411 GLD D2 Data Integrity
+
+on:
+  push:
+    paths:
+      - "t411_gld_d2_di.py"
+      - ".github/workflows/t411-gld-d2-di.yml"
+      - "T411_D2_DI_TRIGGER.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  di:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip -q install pandas yfinance
+      - name: Acquire D2 only and run non-performance DI
+        run: python t411_gld_d2_di.py
+      - name: Verify no D3 files
+        run: |
+          set -euo pipefail
+          if find evidence/t411-gld-d2-di -type f | grep -Ei 'd3|2021|2022|2023|2024|2025'; then
+            echo "Forbidden D3 marker/file detected" >&2
+            exit 2
+          fi
+      - name: Upload D2 DI evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: t411-gld-d2-di
+          path: evidence/t411-gld-d2-di/
+          if-no-files-found: error
