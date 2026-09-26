@@ -52,7 +52,7 @@ def build_terminals(df):
       "range1":(h/l-1.0).tolist(),
       "volume_chg1":(v/v.shift(1)-1.0).replace([float("inf"),float("-inf")],float("nan")).tolist(),
     }
-    return {k:[None if pd.isna(x) else float(x) for x in vals] for k,vals in data.items()}
+    return {k:[float("nan") if pd.isna(x) else float(x) for x in vals] for k,vals in data.items()}
 
 
 def leaf(r):
