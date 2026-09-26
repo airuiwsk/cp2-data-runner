@@ -1,0 +1,55 @@
+name: T411 D2 Non-Performance Feature Fixtures
+
+on:
+  push:
+    paths:
+      - "t411_d2_fixtures.py"
+      - ".github/workflows/t411-d2-fixtures.yml"
+      - "T411_D2_FIXTURE_TRIGGER.md"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  fixtures:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: current
+      - uses: actions/checkout@v4
+        with:
+          ref: 1c88d6ea4448ea3b8001deeb491161c20afd52ba
+          path: frozen_runner
+          persist-credentials: false
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - run: pip -q install pandas
+      - name: Verify frozen engine identity
+        run: |
+          set -euo pipefail
+          test "$(git -C frozen_runner rev-parse HEAD)" = "1c88d6ea4448ea3b8001deeb491161c20afd52ba"
+          test "$(git -C frozen_runner rev-parse HEAD:feature_lab/fdc001_search_engine.py)" = "1c86edb6d090c9bd9cd3ebd5f6a6220676632532"
+      - name: Download authoritative D2 DI artifact
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          set -euo pipefail
+          mkdir -p current/evidence/t411-d2-di
+          curl -fL             -H "Authorization: Bearer $GH_TOKEN"             -H "Accept: application/vnd.github+json"             "https://api.github.com/repos/${{ github.repository }}/actions/artifacts/10903232950/zip"             -o /tmp/t411-d2.zip
+          unzip -o /tmp/t411-d2.zip -d current/evidence/t411-d2-di
+          echo "706d4bae5a5d4ff31011f5422df2271824218139045a162bb59ff1e5a8900922  current/evidence/t411-d2-di/t411_gld_d2_raw.csv" | sha256sum -c -
+      - name: Run feature/state fixtures only
+        run: |
+          mkdir -p current/evidence/t411-d2-fixtures
+          python current/t411_d2_fixtures.py             --frozen-feature-lab "$GITHUB_WORKSPACE/frozen_runner/feature_lab"             --raw "$GITHUB_WORKSPACE/current/evidence/t411-d2-di/t411_gld_d2_raw.csv"             --champion "$GITHUB_WORKSPACE/current/evidence/fdc001-search/fdc001_champion.json"             --out "$GITHUB_WORKSPACE/current/evidence/t411-d2-fixtures/t411_d2_fixtures.json"
+      - name: Upload fixture evidence
+        uses: actions/upload-artifact@v4
+        with:
+          name: t411-d2-fixtures
+          path: current/evidence/t411-d2-fixtures/
+          if-no-files-found: error
