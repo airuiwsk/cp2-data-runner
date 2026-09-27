@@ -1,0 +1,50 @@
+name: XL002 L0 Robinhood v3 preflight
+
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - 'XL002_L0_TRIGGER.md'
+      - 'xl002/**'
+      - '.github/workflows/xl002-l0.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  preflight:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+          cache: 'pip'
+          cache-dependency-path: xl002/requirements.txt
+
+      - name: Install pinned dependency
+        run: pip install -r xl002/requirements.txt
+
+      - name: Compile collector
+        run: python -m py_compile xl002/l0_collect.py
+
+      - name: Run frozen non-performance L0 preflight
+        run: |
+          set -euo pipefail
+          python xl002/l0_collect.py --mode preflight --out artifacts/xl002-l0-preflight
+
+      - name: Show non-performance report
+        if: always()
+        run: |
+          test -f artifacts/xl002-l0-preflight/quality-report.json && cat artifacts/xl002-l0-preflight/quality-report.json || true
+
+      - name: Upload preflight artifact
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xl002-l0-preflight-${{ github.run_id }}
+          path: artifacts/xl002-l0-preflight/
+          if-no-files-found: warn
+          retention-days: 30
