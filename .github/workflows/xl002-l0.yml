@@ -11,6 +11,10 @@ on:
 permissions:
   contents: read
 
+concurrency:
+  group: xl002-l0
+  cancel-in-progress: true
+
 jobs:
   preflight:
     runs-on: ubuntu-latest
