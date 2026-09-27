@@ -212,6 +212,19 @@ def get_logs_split(
 ) -> list[dict[str, Any]]:
     if from_block > to_block:
         return []
+    # Robinhood Chain produces ~636k blocks/day in the frozen window.
+    # Never begin with a 600k+ eth_getLogs request: proactively partition
+    # into small deterministic ranges, then retain recursive bisection as
+    # a fallback for provider-specific limits.
+    MAX_LOG_BLOCKS = 5000
+    if depth == 0 and (to_block - from_block + 1) > MAX_LOG_BLOCKS:
+        out: list[dict[str, Any]] = []
+        lo = from_block
+        while lo <= to_block:
+            hi = min(lo + MAX_LOG_BLOCKS - 1, to_block)
+            out.extend(get_logs_split(client, address, lo, hi, topics, depth + 1))
+            lo = hi + 1
+        return out
     filt: dict[str, Any] = {
         "address": address,
         "fromBlock": hex(from_block),
