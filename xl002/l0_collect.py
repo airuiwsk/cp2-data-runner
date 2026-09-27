@@ -166,7 +166,10 @@ class RpcClient:
 
 def _is_transient_rpc_error(err: Any) -> bool:
     text = json.dumps(err, ensure_ascii=False).lower()
-    markers = ("rate", "limit", "timeout", "too many", "range", "response size", "temporar")
+    # Retry only failures that may clear without changing the request.
+    # Deterministic log-range/result-size errors must return immediately so
+    # get_logs_split() can bisect the range instead of sleeping/retrying it.
+    markers = ("rate limit", "timeout", "temporar", "429", "overload", "busy", "try again")
     return any(m in text for m in markers)
 
 
