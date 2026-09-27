@@ -322,9 +322,13 @@ def write_jsonl(path: pathlib.Path, rows: Iterable[Any]) -> None:
 
 
 def run_preflight(client: RpcClient, out: pathlib.Path, start_block: int, end_block: int) -> dict[str, Any]:
-    factory_code = client.call("eth_getCode", [FACTORY, hex(end_block)])
+    # Robinhood's public RPC exposes historical block/log data but the measured
+    # endpoint does not expose historical state. Factory identity is therefore
+    # checked at latest; the historical existence proof comes from canonical
+    # Factory PoolCreated logs inside the frozen window.
+    factory_code = client.call("eth_getCode", [FACTORY, "latest"])
     if not factory_code or factory_code == "0x":
-        raise RuntimeError("canonical v3 factory has no bytecode at END_BLOCK")
+        raise RuntimeError("canonical v3 factory has no bytecode at latest state")
 
     pool_logs = get_logs_split(
         client,
@@ -369,6 +373,8 @@ def run_preflight(client: RpcClient, out: pathlib.Path, start_block: int, end_bl
 
     return {
         "factory_code_sha256": sha256_bytes(canonical_bytes(factory_code)),
+        "state_read_reference": "latest",
+        "historical_state_available_on_public_rpc": False,
         "pool_created_count": len(pools),
         "event_counts": event_counts,
         "l1_fixture_sufficient": density_ok,
@@ -462,10 +468,10 @@ def run_full(
     token_addresses = sorted({p[k] for p in pools for k in ("token0", "token1")})
     metadata = []
     for token in token_addresses:
-        row: dict[str, Any] = {"address": token}
+        row: dict[str, Any] = {"address": token, "state_reference": "latest"}
         for field, selector in CALL_SELECTORS.items():
             try:
-                raw = client.call("eth_call", [{"to": token, "data": selector}, hex(end_block)])
+                raw = client.call("eth_call", [{"to": token, "data": selector}, "latest"])
                 row[field + "_raw"] = raw
                 if field == "decimals" and raw and raw != "0x":
                     row[field] = int(raw, 16)
