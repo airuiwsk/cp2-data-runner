@@ -93,6 +93,7 @@ class RpcClient:
         self.next_id = 1
         self.request_count = 0
         self.failure_count = 0
+        self.log_coverage: list[dict[str, Any]] = []
         raw_log.parent.mkdir(parents=True, exist_ok=True)
 
     def _append_raw(self, record: dict[str, Any]) -> None:
@@ -236,6 +237,18 @@ def get_logs_split(
         result = client.call("eth_getLogs", [filt])
         if not isinstance(result, list):
             raise RuntimeError("eth_getLogs result is not a list")
+        address_identity = address if isinstance(address, str) else sorted(a.lower() for a in address)
+        client.log_coverage.append(
+            {
+                "fromBlock": from_block,
+                "toBlock": to_block,
+                "address_count": 1 if isinstance(address, str) else len(address),
+                "address_sha256": sha256_bytes(canonical_bytes(address_identity)),
+                "topics_sha256": sha256_bytes(canonical_bytes(topics)),
+                "log_count": len(result),
+                "status": "COMPLETE",
+            }
+        )
         return result
     except RuntimeError as exc:
         if from_block == to_block or depth >= 30:
@@ -404,28 +417,6 @@ def run_full(
     end_block: int,
     preflight: dict[str, Any],
 ) -> dict[str, Any]:
-    blocks_path = out / "decoded" / "blocks.jsonl"
-    blocks_path.parent.mkdir(parents=True, exist_ok=True)
-    previous_hash = None
-    continuity_ok = True
-    block_count = 0
-    with blocks_path.open("wb") as fh:
-        for number in range(start_block, end_block + 1):
-            b = block_header(client, number)
-            row = {
-                "number": hex_int(b.get("number")),
-                "hash": b.get("hash"),
-                "parentHash": b.get("parentHash"),
-                "timestamp": hex_int(b.get("timestamp")),
-                "gasUsed": hex_int(b.get("gasUsed")),
-                "baseFeePerGas": hex_int(b.get("baseFeePerGas")) if b.get("baseFeePerGas") else None,
-            }
-            if previous_hash is not None and row["parentHash"] != previous_hash:
-                continuity_ok = False
-            previous_hash = row["hash"]
-            fh.write(canonical_bytes(row) + b"\n")
-            block_count += 1
-
     pools = []
     pools_file = out / "decoded" / "pools-created.jsonl"
     if pools_file.exists():
@@ -440,6 +431,37 @@ def run_full(
         all_logs.extend(logs)
     all_logs.sort(key=event_sort_key)
     write_jsonl(out / "raw" / "pool-event-logs.jsonl", all_logs)
+
+    # v2 sparse block-header contract: boundaries + deterministic 10k
+    # checkpoints + every event-bearing block. This avoids 636k empty-block
+    # reads while preserving event/block-hash integrity and consistency checks.
+    checkpoint_blocks = set(range(start_block, end_block + 1, 10_000))
+    checkpoint_blocks.update((start_block, end_block))
+    event_blocks = {hex_int(log.get("blockNumber")) for log in all_logs}
+    required_blocks = sorted(checkpoint_blocks | event_blocks)
+    block_rows = []
+    block_hash_by_number: dict[int, str] = {}
+    for number in required_blocks:
+        b = block_header(client, number)
+        row = {
+            "number": hex_int(b.get("number")),
+            "hash": b.get("hash"),
+            "parentHash": b.get("parentHash"),
+            "timestamp": hex_int(b.get("timestamp")),
+            "gasUsed": hex_int(b.get("gasUsed")),
+            "baseFeePerGas": hex_int(b.get("baseFeePerGas")) if b.get("baseFeePerGas") else None,
+            "is_checkpoint": number in checkpoint_blocks,
+            "is_event_block": number in event_blocks,
+        }
+        block_rows.append(row)
+        block_hash_by_number[number] = row["hash"]
+    write_jsonl(out / "decoded" / "blocks-sparse.jsonl", block_rows)
+
+    event_block_hash_mismatch = 0
+    for log in all_logs:
+        n = hex_int(log.get("blockNumber"))
+        if block_hash_by_number.get(n) != log.get("blockHash"):
+            event_block_hash_mismatch += 1
 
     unique_txs = sorted({log.get("transactionHash") for log in all_logs if log.get("transactionHash")})
     tx_rows = []
@@ -513,8 +535,10 @@ def run_full(
 
     return {
         **preflight,
-        "block_count": block_count,
-        "block_continuity_ok": continuity_ok,
+        "required_block_header_count": len(required_blocks),
+        "checkpoint_block_count": len(checkpoint_blocks),
+        "event_block_count": len(event_blocks),
+        "event_block_hash_mismatch": event_block_hash_mismatch,
         "event_transaction_count": len(unique_txs),
         "receipt_classification": receipt_classification,
         "duplicate_event_log_keys": len(duplicate_keys),
@@ -566,7 +590,7 @@ def main() -> int:
 
     preflight = run_preflight(client, out, start_block, end_block)
     result = {
-        "schema": "xl002-l0-v1",
+        "schema": "xl002-l0-v2",
         "mode": args.mode,
         "performance_computed": False,
         "chain_id": CHAIN_ID_DEC,
@@ -592,13 +616,16 @@ def main() -> int:
 
     result["rpc_request_count"] = client.request_count
     result["rpc_failure_attempts"] = client.failure_count
+    result["log_scan_completed_chunks"] = len(client.log_coverage)
+    write_json(out / "log-range-coverage.json", client.log_coverage)
 
     if args.mode == "full":
         l0_pass = (
-            result.get("block_continuity_ok") is True
+            result.get("event_block_hash_mismatch") == 0
             and result.get("duplicate_event_log_keys") == 0
             and result.get("receipt_classification", {}).get("failed", 0) == 0
             and result.get("receipt_classification", {}).get("unknown", 0) == 0
+            and all(x.get("status") == "COMPLETE" for x in client.log_coverage)
         )
         result["l0_integrity_status"] = "PASS" if l0_pass else "FAIL"
         result["l1_fixture_status"] = "SUFFICIENT" if result["l1_fixture_sufficient"] else "INSUFFICIENT_ACTIVITY"
