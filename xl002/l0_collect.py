@@ -388,11 +388,18 @@ def run_full(
     end_block: int,
     preflight: dict[str, Any],
 ) -> dict[str, Any]:
-    pools = []
-    pools_file = out / "decoded" / "pools-created.jsonl"
-    if pools_file.exists():
-        with pools_file.open("r", encoding="utf-8") as fh:
-            pools = [json.loads(line) for line in fh if line.strip()]
+    # Discover the canonical factory-derived pool universe without using
+    # economic outcomes. Pools created before the frozen day may still emit
+    # events inside it, so window-only PoolCreated discovery is incomplete.
+    pool_logs = get_logs_split(
+        client,
+        FACTORY,
+        0,
+        end_block,
+        [TOPICS["PoolCreated"]],
+    )
+    pools = [decode_pool_created(log) for log in sorted(pool_logs, key=event_sort_key)]
+    write_jsonl(out / "decoded" / "pools-created-through-window.jsonl", pools)
 
     addresses = sorted({p["pool"] for p in pools})
     event_topics = [[TOPICS[n] for n in ("Initialize", "Mint", "Burn", "Collect", "Swap")]]
