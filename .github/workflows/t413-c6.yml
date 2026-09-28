@@ -2,6 +2,9 @@ name: T413 C6 one-shot
 
 on:
   workflow_dispatch:
+  push:
+    paths:
+      - 't413/TRIGGER_C6_ONCE'
 
 permissions:
   contents: read
