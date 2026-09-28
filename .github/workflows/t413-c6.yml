@@ -1,0 +1,49 @@
+name: T413 C6 one-shot
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  c6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Verify frozen evaluator blob
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git hash-object t413/stage/scripts/t413_c6_evaluator.py)" = "4a11fbdef1f5f47aaf861c08e602f7ffc9c7a2e7"
+          test "$(git hash-object t413/stage/research/external-leads/XL-20260926-001-timestamp-provenance-ledger-v0.csv)" = "7b60e85845e071eece57fcbb7e1b366752efe914"
+          test "$(git hash-object t413/stage/research/external-leads/XL-20260926-001-timestamp-universe-v0.csv)" = "b008d85c09e3e80660b4cb83f469db3904c99025"
+
+      - name: Prepare canonical paths
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p research/external-leads scripts data/t413
+          cp t413/stage/research/external-leads/XL-20260926-001-timestamp-provenance-ledger-v0.csv research/external-leads/
+          cp t413/stage/research/external-leads/XL-20260926-001-timestamp-universe-v0.csv research/external-leads/
+          cp t413/stage/scripts/t413_c6_evaluator.py scripts/t413_c6_evaluator.py
+          cp t413/stage/scripts/t413_fetch_bybit_trades.py scripts/t413_fetch_bybit_trades.py
+
+      - name: Acquire frozen-scope Bybit trades
+        run: python scripts/t413_fetch_bybit_trades.py
+
+      - name: Run exactly one frozen T413 C6
+        shell: bash
+        run: |
+          set -euo pipefail
+          python scripts/t413_c6_evaluator.py | tee t413-c6-result.json
+
+      - name: Upload T413 C6 result
+        uses: actions/upload-artifact@v4
+        with:
+          name: T413-C6-result
+          path: t413-c6-result.json
+          if-no-files-found: error
+          retention-days: 30
