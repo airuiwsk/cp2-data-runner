@@ -351,64 +351,35 @@ def write_jsonl(path: pathlib.Path, rows: Iterable[Any]) -> None:
 
 
 def run_preflight(client: RpcClient, out: pathlib.Path, start_block: int, end_block: int) -> dict[str, Any]:
-    # Robinhood's public RPC exposes historical block/log data but the measured
-    # endpoint does not expose historical state. Factory identity is therefore
-    # checked at latest; the historical existence proof comes from canonical
-    # Factory PoolCreated logs inside the frozen window.
+    """Outcome-blind transport preflight only.
+
+    Probe three deterministic 5,000-block ranges. Complete frozen-window
+    coverage is reserved for full L0 acquisition.
+    """
     factory_code = client.call("eth_getCode", [FACTORY, "latest"])
     if not factory_code or factory_code == "0x":
         raise RuntimeError("canonical v3 factory has no bytecode at latest state")
 
-    pool_logs = get_logs_split(
-        client,
-        FACTORY,
+    width = 5000
+    starts = sorted({
         start_block,
-        end_block,
-        [TOPICS["PoolCreated"]],
-    )
-    pools = [decode_pool_created(log) for log in sorted(pool_logs, key=event_sort_key)]
-    write_jsonl(out / "decoded" / "pools-created.jsonl", pools)
-
-    event_counts = {name: 0 for name in ("Initialize", "Mint", "Burn", "Collect", "Swap")}
-    pool_events: list[dict[str, Any]] = []
-
-    addresses = sorted({p["pool"] for p in pools})
-    allowed_topics = [[TOPICS[n] for n in event_counts]]
-    for addr_chunk in chunks(addresses, 50):
-        logs = get_logs_split(client, addr_chunk, start_block, end_block, allowed_topics)
-        for log in logs:
-            name = TOPIC_TO_NAME.get((log.get("topics") or [""])[0].lower())
-            if name in event_counts:
-                event_counts[name] += 1
-                pool_events.append(
-                    {
-                        "event": name,
-                        "address": (log.get("address") or "").lower(),
-                        "blockNumber": hex_int(log.get("blockNumber")),
-                        "transactionHash": log.get("transactionHash"),
-                        "transactionIndex": hex_int(log.get("transactionIndex")),
-                        "logIndex": hex_int(log.get("logIndex")),
-                        "blockHash": log.get("blockHash"),
-                    }
-                )
-    pool_events.sort(key=lambda x: (x["blockNumber"], x["transactionIndex"], x["logIndex"]))
-    write_jsonl(out / "decoded" / "event-index.jsonl", pool_events)
-
-    density_ok = (
-        event_counts["Initialize"] >= 1
-        and event_counts["Swap"] >= 100
-        and (event_counts["Mint"] + event_counts["Burn"]) >= 1
-    )
+        max(start_block, ((start_block + end_block) // 2) - width // 2),
+        max(start_block, end_block - width + 1),
+    })
+    probe_logs = 0
+    for lo in starts:
+        hi = min(end_block, lo + width - 1)
+        logs = get_logs_split(client, FACTORY, lo, hi, [TOPICS["PoolCreated"]])
+        probe_logs += len(logs)
 
     return {
         "factory_code_sha256": sha256_bytes(canonical_bytes(factory_code)),
         "state_read_reference": "latest",
         "historical_state_available_on_public_rpc": False,
-        "pool_created_count": len(pools),
-        "event_counts": event_counts,
-        "l1_fixture_sufficient": density_ok,
+        "preflight_probe_ranges": len(starts),
+        "preflight_probe_pool_created_logs": probe_logs,
+        "l1_fixture_sufficient": False,
     }
-
 
 def run_full(
     client: RpcClient,
