@@ -312,7 +312,7 @@ def validate_pool_event(log: dict[str, Any]) -> str:
     name = TOPIC_TO_NAME.get(str(topics[0]).lower())
     if name not in {"Initialize", "Mint", "Burn", "Collect", "Swap"}:
         raise ValueError(f"unexpected pool event topic0: {topics[0]}")
-    expected = {"Initialize": (1, 2), "Mint": (4, 4), "Burn": (4, 3), "Collect": (4, 4), "Swap": (3, 5)}
+    expected = {"Initialize": (1, 2), "Mint": (4, 4), "Burn": (4, 3), "Collect": (4, 3), "Swap": (3, 5)}
     expected_topics, expected_words = expected[name]
     data = log.get("data") or "0x"
     payload = data[2:] if data.startswith("0x") else data
