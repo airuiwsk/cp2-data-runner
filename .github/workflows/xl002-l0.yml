@@ -18,7 +18,7 @@ concurrency:
 jobs:
   preflight:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 180
     steps:
       - uses: actions/checkout@v4
 
@@ -37,18 +37,18 @@ jobs:
       - name: Run frozen non-performance L0 preflight
         run: |
           set -euo pipefail
-          python xl002/l0_collect.py --mode preflight --out artifacts/xl002-l0-preflight
+          python xl002/l0_collect.py --mode full --out artifacts/xl002-l0-full
 
       - name: Show non-performance report
         if: always()
         run: |
-          test -f artifacts/xl002-l0-preflight/quality-report.json && cat artifacts/xl002-l0-preflight/quality-report.json || true
+          test -f artifacts/xl002-l0-full/quality-report.json && cat artifacts/xl002-l0-full/quality-report.json || true
 
       - name: Upload preflight artifact
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: xl002-l0-preflight-${{ github.run_id }}
-          path: artifacts/xl002-l0-preflight/
+          name: xl002-l0-full-${{ github.run_id }}
+          path: artifacts/xl002-l0-full/
           if-no-files-found: warn
           retention-days: 30
