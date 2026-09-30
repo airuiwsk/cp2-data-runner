@@ -456,7 +456,7 @@ def run_full(
     def fetch_required_header(number: int) -> dict[str, Any]:
         b = block_header(client, number)
         return {"number": hex_int(b.get("number")), "hash": b.get("hash"), "parentHash": b.get("parentHash"), "timestamp": hex_int(b.get("timestamp")), "gasUsed": hex_int(b.get("gasUsed")), "baseFeePerGas": hex_int(b.get("baseFeePerGas")) if b.get("baseFeePerGas") else None, "is_checkpoint": number in checkpoint_blocks, "is_event_block": number in event_blocks}
-    with ThreadPoolExecutor(max_workers=24) as executor:
+    with ThreadPoolExecutor(max_workers=8) as executor:
         block_rows = list(executor.map(fetch_required_header, required_blocks))
     block_rows.sort(key=lambda row: row["number"])
     block_hash_by_number: dict[int, str] = {row["number"]: row["hash"] for row in block_rows}
@@ -479,7 +479,7 @@ def run_full(
         classification = "success" if status_raw == "0x1" else ("failed" if status_raw == "0x0" else "unknown")
         receipt_row = {"transactionHash": txh, "status": status_raw, "classification": classification, "gasUsed": hex_int(receipt.get("gasUsed")), "effectiveGasPrice": hex_int(receipt.get("effectiveGasPrice")) if receipt.get("effectiveGasPrice") else None, "logs": receipt.get("logs") or []}
         return tx_row, receipt_row, classification
-    with ThreadPoolExecutor(max_workers=24) as executor:
+    with ThreadPoolExecutor(max_workers=8) as executor:
         envelopes = list(executor.map(fetch_tx_envelope, unique_txs))
     tx_rows = [x[0] for x in envelopes]
     receipt_rows = [x[1] for x in envelopes]
