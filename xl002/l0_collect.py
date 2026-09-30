@@ -19,6 +19,8 @@ import sys
 import time
 import urllib.error
 import urllib.request
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Iterable
 
 try:
@@ -95,16 +97,19 @@ class RpcClient:
         self.next_id = 1
         self.request_count = 0
         self.failure_count = 0
+        self._lock = threading.Lock()
         self.log_coverage: list[dict[str, Any]] = []
         raw_log.parent.mkdir(parents=True, exist_ok=True)
 
     def _append_raw(self, record: dict[str, Any]) -> None:
-        with self.raw_log.open("ab") as fh:
-            fh.write(canonical_bytes(record) + b"\n")
+        with self._lock:
+            with self.raw_log.open("ab") as fh:
+                fh.write(canonical_bytes(record) + b"\n")
 
     def call(self, method: str, params: list[Any]) -> Any:
-        request_id = self.next_id
-        self.next_id += 1
+        with self._lock:
+            request_id = self.next_id
+            self.next_id += 1
         payload = {"jsonrpc": "2.0", "id": request_id, "method": method, "params": params}
         request_bytes = canonical_bytes(payload)
         request_sha = sha256_bytes(request_bytes)
@@ -127,7 +132,8 @@ class RpcClient:
                     response_bytes = resp.read()
                 response_obj = json.loads(response_bytes)
                 canonical_response = canonical_bytes(response_obj)
-                self.request_count += 1
+                with self._lock:
+                    self.request_count += 1
                 self._append_raw(
                     {
                         "endpoint": self.url,
@@ -149,7 +155,8 @@ class RpcClient:
                 return response_obj.get("result")
             except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
                 last_error = f"{type(exc).__name__}: {exc}"
-                self.failure_count += 1
+                with self._lock:
+                    self.failure_count += 1
                 self._append_raw(
                     {
                         "endpoint": self.url,
@@ -446,22 +453,13 @@ def run_full(
     checkpoint_blocks.update((start_block, end_block))
     event_blocks = {hex_int(log.get("blockNumber")) for log in all_logs}
     required_blocks = sorted(checkpoint_blocks | event_blocks)
-    block_rows = []
-    block_hash_by_number: dict[int, str] = {}
-    for number in required_blocks:
+    def fetch_required_header(number: int) -> dict[str, Any]:
         b = block_header(client, number)
-        row = {
-            "number": hex_int(b.get("number")),
-            "hash": b.get("hash"),
-            "parentHash": b.get("parentHash"),
-            "timestamp": hex_int(b.get("timestamp")),
-            "gasUsed": hex_int(b.get("gasUsed")),
-            "baseFeePerGas": hex_int(b.get("baseFeePerGas")) if b.get("baseFeePerGas") else None,
-            "is_checkpoint": number in checkpoint_blocks,
-            "is_event_block": number in event_blocks,
-        }
-        block_rows.append(row)
-        block_hash_by_number[number] = row["hash"]
+        return {"number": hex_int(b.get("number")), "hash": b.get("hash"), "parentHash": b.get("parentHash"), "timestamp": hex_int(b.get("timestamp")), "gasUsed": hex_int(b.get("gasUsed")), "baseFeePerGas": hex_int(b.get("baseFeePerGas")) if b.get("baseFeePerGas") else None, "is_checkpoint": number in checkpoint_blocks, "is_event_block": number in event_blocks}
+    with ThreadPoolExecutor(max_workers=24) as executor:
+        block_rows = list(executor.map(fetch_required_header, required_blocks))
+    block_rows.sort(key=lambda row: row["number"])
+    block_hash_by_number: dict[int, str] = {row["number"]: row["hash"] for row in block_rows}
     write_jsonl(out / "decoded" / "blocks-sparse.jsonl", block_rows)
 
     event_block_hash_mismatch = 0
@@ -471,42 +469,23 @@ def run_full(
             event_block_hash_mismatch += 1
 
     unique_txs = sorted({log.get("transactionHash") for log in all_logs if log.get("transactionHash")})
-    tx_rows = []
-    receipt_rows = []
-    receipt_classification = {"success": 0, "failed": 0, "unknown": 0}
-    for txh in unique_txs:
+    def fetch_tx_envelope(txh: str) -> tuple[dict[str, Any], dict[str, Any], str]:
         tx = client.call("eth_getTransactionByHash", [txh])
         receipt = client.call("eth_getTransactionReceipt", [txh])
         if tx is None or receipt is None:
             raise RuntimeError(f"unresolvable event transaction/receipt: {txh}")
-        tx_rows.append(
-            {
-                "hash": txh,
-                "transactionIndex": hex_int(tx.get("transactionIndex")),
-                "blockNumber": hex_int(tx.get("blockNumber")),
-                "from": tx.get("from"),
-                "to": tx.get("to"),
-                "input": tx.get("input"),
-            }
-        )
+        tx_row = {"hash": txh, "transactionIndex": hex_int(tx.get("transactionIndex")), "blockNumber": hex_int(tx.get("blockNumber")), "from": tx.get("from"), "to": tx.get("to"), "input": tx.get("input")}
         status_raw = receipt.get("status")
-        if status_raw == "0x1":
-            classification = "success"
-        elif status_raw == "0x0":
-            classification = "failed"
-        else:
-            classification = "unknown"
+        classification = "success" if status_raw == "0x1" else ("failed" if status_raw == "0x0" else "unknown")
+        receipt_row = {"transactionHash": txh, "status": status_raw, "classification": classification, "gasUsed": hex_int(receipt.get("gasUsed")), "effectiveGasPrice": hex_int(receipt.get("effectiveGasPrice")) if receipt.get("effectiveGasPrice") else None, "logs": receipt.get("logs") or []}
+        return tx_row, receipt_row, classification
+    with ThreadPoolExecutor(max_workers=24) as executor:
+        envelopes = list(executor.map(fetch_tx_envelope, unique_txs))
+    tx_rows = [x[0] for x in envelopes]
+    receipt_rows = [x[1] for x in envelopes]
+    receipt_classification = {"success": 0, "failed": 0, "unknown": 0}
+    for _, _, classification in envelopes:
         receipt_classification[classification] += 1
-        receipt_rows.append(
-            {
-                "transactionHash": txh,
-                "status": status_raw,
-                "classification": classification,
-                "gasUsed": hex_int(receipt.get("gasUsed")),
-                "effectiveGasPrice": hex_int(receipt.get("effectiveGasPrice")) if receipt.get("effectiveGasPrice") else None,
-                "logs": receipt.get("logs") or [],
-            }
-        )
     write_jsonl(out / "decoded" / "transactions.jsonl", tx_rows)
     write_jsonl(out / "decoded" / "receipts.jsonl", receipt_rows)
 
