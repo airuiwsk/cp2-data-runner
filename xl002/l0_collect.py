@@ -33,6 +33,8 @@ CHAIN_ID_HEX = "0x1237"
 FACTORY = "0x1f7d7550b1b028f7571e69a784071f0205fd2efa"
 WINDOW_START = "2026-07-02T00:00:00Z"
 WINDOW_END = "2026-07-03T00:00:00Z"
+FROZEN_START_BLOCK = 954800
+FROZEN_END_BLOCK = 1591011
 MAX_ATTEMPTS = 5
 USER_AGENT = "AI-Trading-XL002-L0/1.0"
 
@@ -302,6 +304,24 @@ def decode_pool_created(log: dict[str, Any]) -> dict[str, Any]:
     }
 
 
+def validate_pool_event(log: dict[str, Any]) -> str:
+    """Outcome-blind ABI-shape validation for every frozen v3 pool event."""
+    topics = log.get("topics") or []
+    if not topics:
+        raise ValueError("pool event missing topic0")
+    name = TOPIC_TO_NAME.get(str(topics[0]).lower())
+    if name not in {"Initialize", "Mint", "Burn", "Collect", "Swap"}:
+        raise ValueError(f"unexpected pool event topic0: {topics[0]}")
+    expected = {"Initialize": (1, 2), "Mint": (4, 4), "Burn": (4, 3), "Collect": (4, 4), "Swap": (3, 5)}
+    expected_topics, expected_words = expected[name]
+    data = log.get("data") or "0x"
+    payload = data[2:] if data.startswith("0x") else data
+    if len(topics) != expected_topics or len(payload) != expected_words * 64:
+        raise ValueError(f"{name} ABI shape mismatch: topics={len(topics)} data_bytes={len(payload)//2}")
+    int(payload or "0", 16)
+    return name
+
+
 def event_sort_key(log: dict[str, Any]) -> tuple[int, int, int]:
     return (
         hex_int(log.get("blockNumber")),
@@ -408,7 +428,16 @@ def run_full(
         logs = get_logs_split(client, addr_chunk, start_block, end_block, event_topics)
         all_logs.extend(logs)
     all_logs.sort(key=event_sort_key)
+    event_counts = {name: 0 for name in ("Initialize", "Mint", "Burn", "Collect", "Swap")}
+    decode_failures = []
+    for log in all_logs:
+        try:
+            event_counts[validate_pool_event(log)] += 1
+        except Exception as exc:
+            decode_failures.append({"blockNumber": hex_int(log.get("blockNumber")), "transactionHash": log.get("transactionHash"), "logIndex": hex_int(log.get("logIndex")), "error": f"{type(exc).__name__}: {exc}"})
     write_jsonl(out / "raw" / "pool-event-logs.jsonl", all_logs)
+    write_json(out / "decoded" / "event-counts.json", event_counts)
+    write_json(out / "decoded" / "decode-failures.json", decode_failures)
 
     # v2 sparse block-header contract: boundaries + deterministic 10k
     # checkpoints + every event-bearing block. This avoids 636k empty-block
@@ -520,6 +549,9 @@ def run_full(
         "event_transaction_count": len(unique_txs),
         "receipt_classification": receipt_classification,
         "duplicate_event_log_keys": len(duplicate_keys),
+        "event_counts": event_counts,
+        "event_decode_failures": len(decode_failures),
+        "l1_fixture_sufficient": (event_counts["Initialize"] >= 1 and event_counts["Swap"] >= 100 and (event_counts["Mint"] + event_counts["Burn"]) >= 1),
     }
 
 
@@ -562,6 +594,8 @@ def main() -> int:
     end_block = first_at_or_after_end - 1
     if end_block < start_block:
         raise RuntimeError("resolved empty block window")
+    if start_block != FROZEN_START_BLOCK or end_block != FROZEN_END_BLOCK:
+        raise RuntimeError(f"frozen block boundary mismatch: expected {FROZEN_START_BLOCK}->{FROZEN_END_BLOCK}, got {start_block}->{end_block}")
 
     start_header = block_header(client, start_block)
     end_header = block_header(client, end_block)
@@ -599,7 +633,12 @@ def main() -> int:
 
     if args.mode == "full":
         l0_pass = (
-            result.get("event_block_hash_mismatch") == 0
+            result.get("start_block") == FROZEN_START_BLOCK
+            and result.get("end_block") == FROZEN_END_BLOCK
+            and result.get("start_block_timestamp") >= start_ts
+            and result.get("end_block_timestamp") < end_ts
+            and result.get("event_decode_failures") == 0
+            and result.get("event_block_hash_mismatch") == 0
             and result.get("duplicate_event_log_keys") == 0
             and result.get("receipt_classification", {}).get("failed", 0) == 0
             and result.get("receipt_classification", {}).get("unknown", 0) == 0
