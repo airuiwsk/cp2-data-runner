@@ -456,7 +456,7 @@ def run_full(
     def fetch_required_header(number: int) -> dict[str, Any]:
         b = block_header(client, number)
         return {"number": hex_int(b.get("number")), "hash": b.get("hash"), "parentHash": b.get("parentHash"), "timestamp": hex_int(b.get("timestamp")), "gasUsed": hex_int(b.get("gasUsed")), "baseFeePerGas": hex_int(b.get("baseFeePerGas")) if b.get("baseFeePerGas") else None, "is_checkpoint": number in checkpoint_blocks, "is_event_block": number in event_blocks}
-    with ThreadPoolExecutor(max_workers=8) as executor:
+    with ThreadPoolExecutor(max_workers=1) as executor:
         block_rows = list(executor.map(fetch_required_header, required_blocks))
     block_rows.sort(key=lambda row: row["number"])
     block_hash_by_number: dict[int, str] = {row["number"]: row["hash"] for row in block_rows}
