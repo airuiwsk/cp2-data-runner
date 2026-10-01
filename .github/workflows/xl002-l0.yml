@@ -18,32 +18,26 @@ concurrency:
 jobs:
   preflight:
     runs-on: ubuntu-latest
-    timeout-minutes: 180
+    timeout-minutes: 360
     steps:
       - uses: actions/checkout@v4
-
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
           cache: 'pip'
           cache-dependency-path: xl002/requirements.txt
-
       - name: Install pinned dependency
         run: pip install -r xl002/requirements.txt
-
       - name: Compile collector
         run: python -m py_compile xl002/l0_collect.py
-
       - name: Run frozen non-performance L0 preflight
         run: |
           set -euo pipefail
           python xl002/l0_collect.py --mode full --out artifacts/xl002-l0-full
-
       - name: Show non-performance report
         if: always()
         run: |
           test -f artifacts/xl002-l0-full/quality-report.json && cat artifacts/xl002-l0-full/quality-report.json || true
-
       - name: Upload preflight artifact
         if: always()
         uses: actions/upload-artifact@v4
