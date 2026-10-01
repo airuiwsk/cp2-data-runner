@@ -38,6 +38,7 @@ WINDOW_END = "2026-07-03T00:00:00Z"
 FROZEN_START_BLOCK = 954800
 FROZEN_END_BLOCK = 1591011
 MAX_ATTEMPTS = 5
+RPC_BATCH_SIZE = 50
 USER_AGENT = "AI-Trading-XL002-L0/1.0"
 
 EVENT_SIGNATURES = {
@@ -172,6 +173,44 @@ class RpcClient:
                 time.sleep(min(2 ** (attempt - 1), 8))
 
         raise RuntimeError(f"terminal RPC failure for {method}: {last_error}")
+
+
+    def call_batch(self, calls: list[tuple[str, list[Any]]]) -> list[Any]:
+        if not calls:
+            return []
+        with self._lock:
+            first_id = self.next_id
+            self.next_id += len(calls)
+        payload = [{"jsonrpc": "2.0", "id": first_id + i, "method": m, "params": p} for i, (m, p) in enumerate(calls)]
+        request_bytes = canonical_bytes(payload)
+        request_sha = sha256_bytes(request_bytes)
+        for attempt in range(1, MAX_ATTEMPTS + 1):
+            acquired_at = utc_now()
+            try:
+                req = urllib.request.Request(self.url, data=request_bytes, headers={"Content-Type": "application/json", "Accept": "application/json", "User-Agent": USER_AGENT}, method="POST")
+                with urllib.request.urlopen(req, timeout=60) as resp:
+                    response_obj = json.loads(resp.read())
+                if not isinstance(response_obj, list):
+                    raise RuntimeError("batch response is not a list")
+                by_id = {x.get("id"): x for x in response_obj}
+                ordered = []
+                for item in payload:
+                    x = by_id.get(item["id"])
+                    if x is None or "error" in x:
+                        raise RuntimeError(f"batch item failure id={item['id']}: {x}")
+                    ordered.append(x.get("result"))
+                with self._lock:
+                    self.request_count += len(calls)
+                self._append_raw({"endpoint": self.url, "acquired_at": acquired_at, "attempt": attempt, "request_sha256": request_sha, "request": payload, "response_sha256": sha256_bytes(canonical_bytes(response_obj)), "response": response_obj, "transport": "json_rpc_batch"})
+                return ordered
+            except Exception as exc:
+                with self._lock:
+                    self.failure_count += 1
+                self._append_raw({"endpoint": self.url, "acquired_at": acquired_at, "attempt": attempt, "request_sha256": request_sha, "request": payload, "transport_error": f"{type(exc).__name__}: {exc}", "transport": "json_rpc_batch"})
+                if attempt == MAX_ATTEMPTS:
+                    raise
+                time.sleep(min(2 ** (attempt - 1), 8))
+        raise RuntimeError("terminal batch failure")
 
 
 def _is_transient_rpc_error(err: Any) -> bool:
@@ -453,11 +492,13 @@ def run_full(
     checkpoint_blocks.update((start_block, end_block))
     event_blocks = {hex_int(log.get("blockNumber")) for log in all_logs}
     required_blocks = sorted(checkpoint_blocks | event_blocks)
-    def fetch_required_header(number: int) -> dict[str, Any]:
-        b = block_header(client, number)
-        return {"number": hex_int(b.get("number")), "hash": b.get("hash"), "parentHash": b.get("parentHash"), "timestamp": hex_int(b.get("timestamp")), "gasUsed": hex_int(b.get("gasUsed")), "baseFeePerGas": hex_int(b.get("baseFeePerGas")) if b.get("baseFeePerGas") else None, "is_checkpoint": number in checkpoint_blocks, "is_event_block": number in event_blocks}
-    with ThreadPoolExecutor(max_workers=1) as executor:
-        block_rows = list(executor.map(fetch_required_header, required_blocks))
+    block_rows = []
+    for ns in chunks(required_blocks, RPC_BATCH_SIZE):
+        blocks = client.call_batch([("eth_getBlockByNumber", [hex(n), False]) for n in ns])
+        for n, b in zip(ns, blocks):
+            if b is None:
+                raise RuntimeError(f"missing block {n}")
+            block_rows.append({"number": hex_int(b.get("number")), "hash": b.get("hash"), "parentHash": b.get("parentHash"), "timestamp": hex_int(b.get("timestamp")), "gasUsed": hex_int(b.get("gasUsed")), "baseFeePerGas": hex_int(b.get("baseFeePerGas")) if b.get("baseFeePerGas") else None, "is_checkpoint": n in checkpoint_blocks, "is_event_block": n in event_blocks})
     block_rows.sort(key=lambda row: row["number"])
     block_hash_by_number: dict[int, str] = {row["number"]: row["hash"] for row in block_rows}
     write_jsonl(out / "decoded" / "blocks-sparse.jsonl", block_rows)
