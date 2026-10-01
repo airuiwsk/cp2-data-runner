@@ -170,7 +170,10 @@ class RpcClient:
                 )
                 if attempt == MAX_ATTEMPTS:
                     raise RuntimeError(f"terminal RPC transport failure for {method}: {last_error}") from exc
-                time.sleep(min(2 ** (attempt - 1), 8))
+                if isinstance(exc, urllib.error.HTTPError) and exc.code == 429:
+                    time.sleep((30, 60, 120, 120)[attempt - 1])
+                else:
+                    time.sleep(min(2 ** (attempt - 1), 8))
 
         raise RuntimeError(f"terminal RPC failure for {method}: {last_error}")
 
@@ -209,7 +212,10 @@ class RpcClient:
                 self._append_raw({"endpoint": self.url, "acquired_at": acquired_at, "attempt": attempt, "request_sha256": request_sha, "request": payload, "transport_error": f"{type(exc).__name__}: {exc}", "transport": "json_rpc_batch"})
                 if attempt == MAX_ATTEMPTS:
                     raise
-                time.sleep(min(2 ** (attempt - 1), 8))
+                if isinstance(exc, urllib.error.HTTPError) and exc.code == 429:
+                    time.sleep((30, 60, 120, 120)[attempt - 1])
+                else:
+                    time.sleep(min(2 ** (attempt - 1), 8))
         raise RuntimeError("terminal batch failure")
 
 
