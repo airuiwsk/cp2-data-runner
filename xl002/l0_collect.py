@@ -516,23 +516,23 @@ def run_full(
             event_block_hash_mismatch += 1
 
     unique_txs = sorted({log.get("transactionHash") for log in all_logs if log.get("transactionHash")})
-    def fetch_tx_envelope(txh: str) -> tuple[dict[str, Any], dict[str, Any], str]:
-        tx = client.call("eth_getTransactionByHash", [txh])
-        receipt = client.call("eth_getTransactionReceipt", [txh])
-        if tx is None or receipt is None:
-            raise RuntimeError(f"unresolvable event transaction/receipt: {txh}")
-        tx_row = {"hash": txh, "transactionIndex": hex_int(tx.get("transactionIndex")), "blockNumber": hex_int(tx.get("blockNumber")), "from": tx.get("from"), "to": tx.get("to"), "input": tx.get("input")}
-        status_raw = receipt.get("status")
-        classification = "success" if status_raw == "0x1" else ("failed" if status_raw == "0x0" else "unknown")
-        receipt_row = {"transactionHash": txh, "status": status_raw, "classification": classification, "gasUsed": hex_int(receipt.get("gasUsed")), "effectiveGasPrice": hex_int(receipt.get("effectiveGasPrice")) if receipt.get("effectiveGasPrice") else None, "logs": receipt.get("logs") or []}
-        return tx_row, receipt_row, classification
-    with ThreadPoolExecutor(max_workers=8) as executor:
-        envelopes = list(executor.map(fetch_tx_envelope, unique_txs))
-    tx_rows = [x[0] for x in envelopes]
-    receipt_rows = [x[1] for x in envelopes]
+    # Outcome-blind transport acceleration: fetch the exact same required
+    # transaction/receipt envelope via deterministic JSON-RPC batches instead
+    # of two serial RPC calls per transaction. No sample, field, or L0 gate changes.
+    tx_rows = []
+    receipt_rows = []
     receipt_classification = {"success": 0, "failed": 0, "unknown": 0}
-    for _, _, classification in envelopes:
-        receipt_classification[classification] += 1
+    for tx_hashes in chunks(unique_txs, RPC_BATCH_SIZE):
+        txs = client.call_batch([("eth_getTransactionByHash", [txh]) for txh in tx_hashes])
+        receipts = client.call_batch([("eth_getTransactionReceipt", [txh]) for txh in tx_hashes])
+        for txh, tx, receipt in zip(tx_hashes, txs, receipts):
+            if tx is None or receipt is None:
+                raise RuntimeError(f"unresolvable event transaction/receipt: {txh}")
+            tx_rows.append({"hash": txh, "transactionIndex": hex_int(tx.get("transactionIndex")), "blockNumber": hex_int(tx.get("blockNumber")), "from": tx.get("from"), "to": tx.get("to"), "input": tx.get("input")})
+            status_raw = receipt.get("status")
+            classification = "success" if status_raw == "0x1" else ("failed" if status_raw == "0x0" else "unknown")
+            receipt_rows.append({"transactionHash": txh, "status": status_raw, "classification": classification, "gasUsed": hex_int(receipt.get("gasUsed")), "effectiveGasPrice": hex_int(receipt.get("effectiveGasPrice")) if receipt.get("effectiveGasPrice") else None, "logs": receipt.get("logs") or []})
+            receipt_classification[classification] += 1
     write_jsonl(out / "decoded" / "transactions.jsonl", tx_rows)
     write_jsonl(out / "decoded" / "receipts.jsonl", receipt_rows)
 
