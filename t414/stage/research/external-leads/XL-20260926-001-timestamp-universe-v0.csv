@@ -1,0 +1,121 @@
+date_utc,name,amountUsd,target,classification
+2022-01-18,Crypto.com,33700000,CEX,Frontend & Infrastructure
+2022-01-28,Qubit,80000000,DeFi Protocol,Input Validation
+2022-02-02,Portal,326000000,DeFi Protocol,Input Validation
+2022-02-10,Dego Finance,10000000,DeFi Protocol,Key Compromise
+2022-02-12,IRA Financial / Gemini,36000000,CEX,Frontend & Infrastructure
+2022-03-23,Cashio,52800000,DeFi Protocol,Input Validation
+2022-03-23,Ronin Bridge,624000000,DeFi Protocol,Key Compromise
+2022-04-02,Inverse Finance Frontier,15600000,DeFi Protocol,Oracle Manipulation
+2022-04-12,Elephant Money,22200000,DeFi Protocol,Oracle Manipulation
+2022-04-17,Beanstalk,181000000,DeFi Protocol,Governance
+2022-04-28,DEUS Finance,13400000,DeFi Protocol,Oracle Manipulation
+2022-04-30,Saddle Finance,11000000,DeFi Protocol,Protocol Logic
+2022-05-01,Rari Capital,80000000,DeFi Protocol,Reentrancy
+2022-05-11,Drift Trade,14500000,DeFi Protocol,Market Manipulation
+2022-05-12,Venus Protocol,11200000,DeFi Protocol,Oracle Manipulation
+2022-06-05,Elrond,113000000,DeFi Protocol,Token & Share Accounting
+2022-06-05,Wintermute,17600000,DeFi Protocol,Access Control
+2022-06-23,Harmony Bridge,100000000,DeFi Protocol,Key Compromise
+2022-08-01,Nomad,190000000,DeFi Protocol,Bridge & Cross-Chain
+2022-09-20,Wintermute,160000000,Other,Social Engineering
+2022-10-02,Transit Swap,28900000,DeFi Protocol,Input Validation
+2022-10-06,Binance Bridge,570000000,DeFi Protocol,Bridge & Cross-Chain
+2022-10-11,Mango Markets V3,115000000,DeFi Protocol,Oracle Manipulation
+2022-10-27,Team Finance,15800000,DeFi Protocol,Input Validation
+2022-11-01,Deribit,28000000,CEX,Key Compromise
+2022-11-06,Pando Rings,22000000,DeFi Protocol,Oracle Manipulation
+2022-11-12,FTX,450000000,CEX,Social Engineering
+2022-12-11,3Commas,20000000,CEX,Frontend & Infrastructure
+2022-12-24,Defrost,12000000,DeFi Protocol,Key Compromise
+2023-03-13,Euler V1,197000000,DeFi Protocol,Token & Share Accounting
+2023-04-03,MEV-Boost Relay,20000000,Other,Frontend & Infrastructure
+2023-04-08,GDAC,13900000,CEX,Key Compromise
+2023-04-13,Yearn Finance,11539000,DeFi Protocol,Oracle Manipulation
+2023-04-14,Bitrue,23000000,CEX,Key Compromise
+2023-06-03,Atomic Wallet,100000000,Wallet,Frontend & Infrastructure
+2023-06-11,Floating Point Group,15000000,CEX,Frontend & Infrastructure
+2023-07-07,Multichain,126000000,DeFi Protocol,Key Compromise
+2023-07-22,CoinsPaid,37300000,Other,Social Engineering
+2023-07-26,AlphaPo,60000000,CEX,Key Compromise
+2023-07-30,Curve DEX,61700000,DeFi Protocol,Reentrancy
+2023-08-02,Bald,23000000,DeFi Protocol,Rugpull
+2023-08-26,PEPE,15080000,Token,Rugpull
+2023-09-04,Stake.com,41300000,Other,Key Compromise
+2023-09-07,Fortress Trust,12000000,CEX,Frontend & Infrastructure
+2023-09-12,CoinEx,55000000,CEX,Key Compromise
+2023-09-23,Mixin Network,200000000,Other,Frontend & Infrastructure
+2023-11-10,Poloniex,126000000,CEX,Social Engineering
+2023-11-18,Kronos Research,26000000,Other,Frontend & Infrastructure
+2023-11-22,Heco Bridge,86600000,DeFi Protocol,Key Compromise
+2023-11-22,Huobi,13600000,CEX,Key Compromise
+2023-11-22,KyberSwap Elastic,48000000,DeFi Protocol,Token & Share Accounting
+2023-12-31,Orbit Bridge,81700000,DeFi Protocol,Input Validation
+2024-01-27,Somesing,11580000,DeFi Protocol,Token & Share Accounting
+2024-02-09,PlayDapp,290000000,DeFi Protocol,Key Compromise
+2024-02-18,FixedFloat,26100000,DeFi Protocol,Frontend & Infrastructure
+2024-03-25,Curio,16000000,DeFi Protocol,Access Control
+2024-03-26,Munchables,62500000,Gaming,Access Control
+2024-03-28,PrismaLST,11600000,DeFi Protocol,Input Validation
+2024-04-19,Hedgey,44700000,DeFi Protocol,Input Validation
+2024-04-29,Rain,14800000,CEX,Key Compromise
+2024-05-15,Sonne Finance,20000000,DeFi Protocol,Token & Share Accounting
+2024-05-20,Gala,22300000,DeFi Protocol,Token & Share Accounting
+2024-05-31,DMM Bitcoin,305000000,CEX,Social Engineering
+2024-06-04,Lykke,22400000,CEX,Key Compromise
+2024-06-10,UwU Lend,20000000,DeFi Protocol,Oracle Manipulation
+2024-06-22,BtcTurk,54000000,CEX,Key Compromise
+2024-07-18,WazirX: India,234900000,CEX,Social Engineering
+2024-08-06,Ronin Bridge,12000000,DeFi Protocol,Access Control
+2024-09-03,Penpie,27000000,DeFi Protocol,Reentrancy
+2024-09-10,Indodax,25200000,CEX,Frontend & Infrastructure
+2024-09-20,BingX,43300000,CEX,Key Compromise
+2024-10-16,Radiant V2,50000000,DeFi Protocol,Social Engineering
+2024-10-24,US Government Crypto Wallet,20000000,Other,Key Compromise
+2024-10-31,M2 Exchange,13700000,CEX,Key Compromise
+2024-11-15,ThalaSwap,25500000,DeFi Protocol,Input Validation
+2024-11-16,DEXX,21000000,Wallet,Key Compromise
+2025-01-23,Phemex,85000000,CEX,Key Compromise
+2025-01-28,DogWifTools,10000000,Other,Frontend & Infrastructure
+2025-02-21,Bybit,1400000000,CEX,Social Engineering
+2025-02-24,Infini,49500000,DeFi Protocol,Key Compromise
+2025-03-25,Abracadabra Spell,13000000,DeFi Protocol,Protocol Logic
+2025-04-01,UPCX,70000000,DeFi Protocol,Access Control
+2025-04-20,Bitget,100000000,CEX,Market Manipulation
+2025-05-08,BitoPro,11500000,CEX,Frontend & Infrastructure
+2025-05-22,Cetus CLMM,223000000,DeFi Protocol,Token & Share Accounting
+2025-05-28,Cork V1,12000000,DeFi Protocol,Access Control
+2025-06-18,Nobitex,82000000,CEX,Social Engineering
+2025-07-09,GMX V1 Perps,42000000,DeFi Protocol,Reentrancy
+2025-07-16,BigONE,27000000,CEX,Frontend & Infrastructure
+2025-07-19,CoinDCX,44200000,CEX,Key Compromise
+2025-07-24,WOO X,14000000,CEX,Social Engineering
+2025-08-14,BtcTurk,48000000,CEX,Key Compromise
+2025-09-09,SwissBorg,41500000,CEX,Frontend & Infrastructure
+2025-09-22,UXLINK,11300000,DeFi Protocol,Access Control
+2025-09-24,SBI Crypto,21000000,Other,Key Compromise
+2025-10-30,Garden,11400000,DeFi Protocol,Frontend & Infrastructure
+2025-11-03,Balancer V2,128000000,DeFi Protocol,Token & Share Accounting
+2025-11-26,Upbit,36000000,CEX,Social Engineering
+2026-01-08,Truebit,26400000,DeFi Protocol,Token & Share Accounting
+2026-01-25,Matcha,13430000,DeFi Protocol,Frontend & Infrastructure
+2026-01-31,Step Finance,40000000,DeFi Protocol,Key Compromise
+2026-02-22,Blend Pools V2,10970000,DeFi Protocol,Oracle Manipulation
+2026-03-21,Resolv USR,24500000,DeFi Protocol,Frontend & Infrastructure
+2026-04-01,Drift Trade,295000000,DeFi Protocol,Access Control
+2026-04-16,Grinex,13740000,CEX,Key Compromise
+2026-04-16,Rhea Lend,18400000,DeFi Protocol,Oracle Manipulation
+2026-04-18,Kelp,293000000,DeFi Protocol,Bridge & Cross-Chain
+2026-05-15,THORChain DEX,10700000,Chain,Bridge & Cross-Chain
+2026-05-17,Verus-Ethereum Bridge,11500000,DeFi Protocol,Bridge & Cross-Chain
+2026-05-27,SUPERFORTUNE AI,15180000,Token,Access Control
+2026-06-07,Syscoin Bridge,10000000,DeFi Protocol,Bridge & Cross-Chain
+2026-06-08,Humanity,32000000,DeFi Protocol,Key Compromise
+2026-07-06,BonkDAO,20000000,Token,Governance
+2026-07-15,Ostium,23750000,DeFi Protocol,Key Compromise
+2026-07-21,Wanchain,10000000,Chain,Input Validation
+2026-07-22,AFX Bridge,24150000,DeFi Protocol,Key Compromise
+2026-07-31,COLDCARD,116000000,Wallet,Key Compromise
+2026-08-05,KITE Foundation,13340000,Wallet,Key Compromise
+2026-08-24,Nesa,50000000,Chain,Token & Share Accounting
+2026-08-30,Tectonic,124470000,DeFi Protocol,Token & Share Accounting
