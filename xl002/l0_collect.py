@@ -224,7 +224,7 @@ def _is_transient_rpc_error(err: Any) -> bool:
     # Retry only failures that may clear without changing the request.
     # Deterministic log-range/result-size errors must return immediately so
     # get_logs_split() can bisect the range instead of sleeping/retrying it.
-    markers = ("rate limit", "timeout", "temporar", "429", "overload", "busy", "try again")
+    markers = ("rate limit", "timeout", "deadline exceeded", "temporar", "429", "overload", "busy", "try again")
     return any(m in text for m in markers)
 
 
@@ -308,7 +308,7 @@ def get_logs_split(
         if from_block == to_block or depth >= 30:
             raise
         msg = str(exc).lower()
-        split_markers = ("rate", "limit", "range", "response size", "timeout", "too many", "temporar")
+        split_markers = ("rate", "limit", "range", "response size", "timeout", "deadline exceeded", "too many", "temporar")
         if not any(m in msg for m in split_markers):
             raise
         mid = (from_block + to_block) // 2
