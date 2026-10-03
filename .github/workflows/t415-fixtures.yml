@@ -1,0 +1,16 @@
+name: T415 preperformance fixtures
+on:
+  push:
+    branches: [t415-boundary-fix-v2]
+    paths: ['T415_FIXTURE_TRIGGER.md']
+permissions:
+  contents: read
+jobs:
+  fixtures:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify corrected evaluator
+        run: test "$(git hash-object t414/stage/scripts/t415_c6_evaluator.py)" = "748aa6031ff6a725ee1f3ea3c154ae1239387552"
+      - name: Boundary fixtures
+        run: python t414/stage/scripts/t415_fixtures.py
