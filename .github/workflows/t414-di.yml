@@ -2,6 +2,10 @@ name: T414 outcome-blind DI
 
 on:
   workflow_dispatch:
+  push:
+    branches: [t414-di-run]
+    paths:
+      - 'T414_DI_TRIGGER.md'
 
 permissions:
   contents: read
