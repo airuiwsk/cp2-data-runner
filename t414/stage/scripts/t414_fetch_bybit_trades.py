@@ -11,7 +11,10 @@ OUT=ROOT/"data/t414"; BASE="https://public.bybit.com/trading"; SYMS=("XMRUSDT","
 def D(s):return datetime.fromisoformat(s.replace("Z","+00:00")).astimezone(timezone.utc)
 def ceil5(t):
  b=t.replace(second=0,microsecond=0)
- if t.second or t.microsecond or b.minute%5:b+=timedelta(minutes=(5-b.minute%5)%5)
+ if t.second or t.microsecond:
+  b+=timedelta(minutes=1)
+ if b.minute%5:
+  b+=timedelta(minutes=5-b.minute%5)
  return b
 def events():
  out=[]
