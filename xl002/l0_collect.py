@@ -499,8 +499,12 @@ def run_full(
     event_blocks = {hex_int(log.get("blockNumber")) for log in all_logs}
     required_blocks = sorted(checkpoint_blocks | event_blocks)
     block_rows = []
-    for ns in chunks(required_blocks, RPC_BATCH_SIZE):
-        blocks = client.call_batch([("eth_getBlockByNumber", [hex(n), False]) for n in ns])
+    block_batches = list(chunks(required_blocks, RPC_BATCH_SIZE))
+    def fetch_block_batch(ns: list[int]) -> tuple[list[int], list[Any]]:
+        return ns, client.call_batch([("eth_getBlockByNumber", [hex(n), False]) for n in ns])
+    with ThreadPoolExecutor(max_workers=2) as ex:
+        fetched_block_batches = list(ex.map(fetch_block_batch, block_batches))
+    for ns, blocks in fetched_block_batches:
         for n, b in zip(ns, blocks):
             if b is None:
                 raise RuntimeError(f"missing block {n}")
@@ -522,9 +526,14 @@ def run_full(
     tx_rows = []
     receipt_rows = []
     receipt_classification = {"success": 0, "failed": 0, "unknown": 0}
-    for tx_hashes in chunks(unique_txs, RPC_BATCH_SIZE):
+    tx_batches = list(chunks(unique_txs, RPC_BATCH_SIZE))
+    def fetch_tx_batch(tx_hashes: list[str]) -> tuple[list[str], list[Any], list[Any]]:
         txs = client.call_batch([("eth_getTransactionByHash", [txh]) for txh in tx_hashes])
         receipts = client.call_batch([("eth_getTransactionReceipt", [txh]) for txh in tx_hashes])
+        return tx_hashes, txs, receipts
+    with ThreadPoolExecutor(max_workers=2) as ex:
+        fetched_tx_batches = list(ex.map(fetch_tx_batch, tx_batches))
+    for tx_hashes, txs, receipts in fetched_tx_batches:
         for txh, tx, receipt in zip(tx_hashes, txs, receipts):
             if tx is None or receipt is None:
                 raise RuntimeError(f"unresolvable event transaction/receipt: {txh}")
