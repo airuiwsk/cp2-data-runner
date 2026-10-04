@@ -1,0 +1,36 @@
+name: T415 outcome-blind DI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [t415-boundary-aligned]
+    paths:
+      - 'T415_DI_TRIGGER.md'
+
+permissions:
+  contents: read
+
+jobs:
+  di:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frozen T415 evaluator blob
+        shell: bash
+        run: |
+          test "$(git hash-object t414/stage/scripts/t415_c6_evaluator.py)" = "748aa6031ff6a725ee1f3ea3c154ae1239387552"
+      - name: Acquire frozen Bybit public archives
+        run: python t414/stage/scripts/t414_fetch_bybit_trades.py
+      - name: Run outcome-blind source DI
+        run: python t414/stage/scripts/t414_di.py
+      - name: Upload DI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t415-di-${{ github.run_id }}
+          path: |
+            data/t414/acquisition-report.json
+            data/t414/di-report.json
+          if-no-files-found: warn
+          retention-days: 14
