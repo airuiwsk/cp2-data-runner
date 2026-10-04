@@ -536,21 +536,10 @@ def run_full(
     write_jsonl(out / "decoded" / "transactions.jsonl", tx_rows)
     write_jsonl(out / "decoded" / "receipts.jsonl", receipt_rows)
 
-    token_addresses = sorted({p[k] for p in pools for k in ("token0", "token1")})
+    # Token metadata is optional under the frozen v2 L0 contract and is not
+    # an L0 PASS gate. Omit serial latest-state eth_call reads; preserve all
+    # required logs, sparse headers, transactions and receipts unchanged.
     metadata = []
-    for token in token_addresses:
-        row: dict[str, Any] = {"address": token, "state_reference": "latest"}
-        for field, selector in CALL_SELECTORS.items():
-            try:
-                raw = client.call("eth_call", [{"to": token, "data": selector}, "latest"])
-                row[field + "_raw"] = raw
-                if field == "decimals" and raw and raw != "0x":
-                    row[field] = int(raw, 16)
-                else:
-                    row[field] = decode_abi_string(raw)
-            except Exception as exc:
-                row[field + "_error"] = f"{type(exc).__name__}: {exc}"
-        metadata.append(row)
     write_jsonl(out / "decoded" / "token-metadata.jsonl", metadata)
 
     duplicate_keys = set()
