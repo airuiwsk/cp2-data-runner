@@ -3,7 +3,7 @@ name: T415 outcome-blind DI
 on:
   workflow_dispatch:
   push:
-    branches: [t415-boundary-aligned]
+    branches: [t415-di-exec2]
     paths:
       - 'T415_DI_TRIGGER.md'
 
