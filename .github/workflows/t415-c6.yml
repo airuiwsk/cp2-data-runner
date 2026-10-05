@@ -1,0 +1,31 @@
+name: T415 exactly-one C6
+on:
+  push:
+    branches: [t415-c6-run]
+    paths: ['T415_C6_TRIGGER.md']
+permissions:
+  contents: read
+jobs:
+  c6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frozen T415 evaluator blob
+        run: test "$(git hash-object t414/stage/scripts/t415_c6_evaluator.py)" = "748aa6031ff6a725ee1f3ea3c154ae1239387552"
+      - name: Fixtures
+        run: cd t414/stage && python scripts/t415_fixtures.py
+      - name: Acquire
+        run: python t414/stage/scripts/t414_fetch_bybit_trades.py
+      - name: DI
+        run: python t414/stage/scripts/t414_di.py
+      - name: C6
+        run: python t414/stage/scripts/t415_c6_evaluator.py | tee t415-c6-result.json
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: t415-c6
+          path: |
+            t415-c6-result.json
+            data/t414/acquisition-report.json
+            data/t414/di-report.json
