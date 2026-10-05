@@ -1,0 +1,38 @@
+name: T416 outcome-blind DI
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [t416-preperformance]
+    paths:
+      - 'T416_DI_TRIGGER.md'
+
+permissions:
+  contents: read
+
+jobs:
+  di:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify frozen T416 evaluator blob
+        shell: bash
+        run: |
+          test "$(git hash-object t414/stage/scripts/t416_c6_evaluator.py)" = "fb68cf3149119338291c54b5047ac2e8ad06f950"
+      - name: Run non-performance T416 fixtures
+        run: python t414/stage/scripts/t416_fixtures.py
+      - name: Acquire frozen Bybit public archives
+        run: python t414/stage/scripts/t414_fetch_bybit_trades.py
+      - name: Run outcome-blind source DI
+        run: python t414/stage/scripts/t414_di.py
+      - name: Upload T416 DI evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t416-di-${{ github.run_id }}
+          path: |
+            data/t414/acquisition-report.json
+            data/t414/di-report.json
+          if-no-files-found: warn
+          retention-days: 14
