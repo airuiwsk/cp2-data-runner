@@ -14,7 +14,7 @@ jobs:
       - name: Verify frozen T415 evaluator blob
         run: test "$(git hash-object t414/stage/scripts/t415_c6_evaluator.py)" = "748aa6031ff6a725ee1f3ea3c154ae1239387552"
       - name: Fixtures
-        run: cd t414/stage && python scripts/t415_fixtures.py
+        run: python t414/stage/scripts/t415_fixtures.py
       - name: Acquire
         run: python t414/stage/scripts/t414_fetch_bybit_trades.py
       - name: DI
