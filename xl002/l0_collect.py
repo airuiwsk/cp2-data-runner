@@ -499,16 +499,57 @@ def run_full(
     checkpoint_blocks.update((start_block, end_block))
     event_blocks = {hex_int(log.get("blockNumber")) for log in all_logs}
     required_blocks = sorted(checkpoint_blocks | event_blocks)
-    block_rows = []
-    block_batches = list(chunks(required_blocks, HEADER_BATCH_SIZE))
+
+    # Outcome-blind resumable transport checkpoint. The checkpoint contains only
+    # already-acquired block headers; it cannot alter the frozen required-block
+    # set. Cached event-block rows are cross-checked against the immutable log
+    # blockHash before reuse. New rows are persisted after every successful RPC
+    # batch so a provider quota failure does not force a restart from zero.
+    checkpoint_path = out / "transport-checkpoint" / "blocks-sparse.partial.jsonl"
+    cached_by_number: dict[int, dict[str, Any]] = {}
+    if checkpoint_path.exists():
+        with checkpoint_path.open("r", encoding="utf-8") as fh:
+            for line_no, line in enumerate(fh, 1):
+                if not line.strip():
+                    continue
+                row = json.loads(line)
+                n = int(row["number"])
+                if n not in required_blocks:
+                    raise RuntimeError(f"checkpoint contains non-required block {n} at line {line_no}")
+                if n in cached_by_number and cached_by_number[n] != row:
+                    raise RuntimeError(f"checkpoint conflicting duplicate block {n}")
+                cached_by_number[n] = row
+        event_hashes: dict[int, set[str]] = {}
+        for log in all_logs:
+            n = hex_int(log.get("blockNumber"))
+            event_hashes.setdefault(n, set()).add(str(log.get("blockHash")).lower())
+        for n, row in cached_by_number.items():
+            if n in event_hashes:
+                hashes = event_hashes[n]
+                if len(hashes) != 1 or str(row.get("hash")).lower() not in hashes:
+                    raise RuntimeError(f"checkpoint/log blockHash mismatch at event block {n}")
+
+    block_rows = [cached_by_number[n] for n in required_blocks if n in cached_by_number]
+    missing_blocks = [n for n in required_blocks if n not in cached_by_number]
+    block_batches = list(chunks(missing_blocks, HEADER_BATCH_SIZE))
     def fetch_block_batch(ns: list[int]) -> tuple[list[int], list[Any]]:
         return ns, client.call_batch([("eth_getBlockByNumber", [hex(n), False]) for n in ns])
-    fetched_block_batches = [fetch_block_batch(ns) for ns in block_batches]
-    for ns, blocks in fetched_block_batches:
+    checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
+    for ns in block_batches:
+        _, blocks = fetch_block_batch(ns)
+        new_rows = []
         for n, b in zip(ns, blocks):
             if b is None:
                 raise RuntimeError(f"missing block {n}")
-            block_rows.append({"number": hex_int(b.get("number")), "hash": b.get("hash"), "parentHash": b.get("parentHash"), "timestamp": hex_int(b.get("timestamp")), "gasUsed": hex_int(b.get("gasUsed")), "baseFeePerGas": hex_int(b.get("baseFeePerGas")) if b.get("baseFeePerGas") else None, "is_checkpoint": n in checkpoint_blocks, "is_event_block": n in event_blocks})
+            if hex_int(b.get("number")) != n:
+                raise RuntimeError(f"header number mismatch: requested {n}, got {b.get('number')}")
+            row = {"number": n, "hash": b.get("hash"), "parentHash": b.get("parentHash"), "timestamp": hex_int(b.get("timestamp")), "gasUsed": hex_int(b.get("gasUsed")), "baseFeePerGas": hex_int(b.get("baseFeePerGas")) if b.get("baseFeePerGas") else None, "is_checkpoint": n in checkpoint_blocks, "is_event_block": n in event_blocks}
+            block_rows.append(row)
+            new_rows.append(row)
+        with checkpoint_path.open("ab") as fh:
+            for row in new_rows:
+                fh.write(canonical_bytes(row) + b"\n")
+            fh.flush()
     block_rows.sort(key=lambda row: row["number"])
     block_hash_by_number: dict[int, str] = {row["number"]: row["hash"] for row in block_rows}
     write_jsonl(out / "decoded" / "blocks-sparse.jsonl", block_rows)
@@ -567,6 +608,8 @@ def run_full(
     return {
         **preflight,
         "required_block_header_count": len(required_blocks),
+        "resumed_block_header_count": len(cached_by_number),
+        "new_block_header_count": len(missing_blocks),
         "checkpoint_block_count": len(checkpoint_blocks),
         "event_block_count": len(event_blocks),
         "event_block_hash_mismatch": event_block_hash_mismatch,
