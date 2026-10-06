@@ -1,0 +1,35 @@
+name: T416 frozen C6
+
+on:
+  push:
+    branches: [t416-c6-run]
+    paths: ['T416_C6_TRIGGER.md']
+
+permissions:
+  contents: read
+
+jobs:
+  c6:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v4
+      - name: Verify evaluator
+        run: test "$(git hash-object t414/stage/scripts/t416_c6_evaluator.py)" = "fb68cf3149119338291c54b5047ac2e8ad06f950"
+      - name: Fixtures
+        run: python t414/stage/scripts/t416_fixtures.py
+      - name: Acquire
+        run: python t414/stage/scripts/t414_fetch_bybit_trades.py
+      - name: DI
+        run: python t414/stage/scripts/t414_di.py
+      - name: C6
+        run: python t414/stage/scripts/t416_c6_evaluator.py | tee data/t414/t416-c6-result.json
+      - name: Evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: t416-c6-${{ github.run_id }}
+          path: |
+            data/t414/acquisition-report.json
+            data/t414/di-report.json
+            data/t414/t416-c6-result.json
