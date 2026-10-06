@@ -37,7 +37,7 @@ WINDOW_START = "2026-07-02T00:00:00Z"
 WINDOW_END = "2026-07-03T00:00:00Z"
 FROZEN_START_BLOCK = 954800
 FROZEN_END_BLOCK = 1591011
-MAX_ATTEMPTS = 5
+MAX_ATTEMPTS = 8
 RPC_BATCH_SIZE = 50
 HEADER_BATCH_SIZE = 500
 USER_AGENT = "AI-Trading-XL002-L0/1.0"
@@ -172,7 +172,7 @@ class RpcClient:
                 if attempt == MAX_ATTEMPTS:
                     raise RuntimeError(f"terminal RPC transport failure for {method}: {last_error}") from exc
                 if isinstance(exc, urllib.error.HTTPError) and exc.code == 429:
-                    time.sleep((30, 60, 120, 120)[attempt - 1])
+                    time.sleep((30, 60, 120, 240, 480, 600, 600)[attempt - 1])
                 else:
                     time.sleep(min(2 ** (attempt - 1), 8))
 
@@ -214,7 +214,7 @@ class RpcClient:
                 if attempt == MAX_ATTEMPTS:
                     raise
                 if isinstance(exc, urllib.error.HTTPError) and exc.code == 429:
-                    time.sleep((30, 60, 120, 120)[attempt - 1])
+                    time.sleep((30, 60, 120, 240, 480, 600, 600)[attempt - 1])
                 else:
                     time.sleep(min(2 ** (attempt - 1), 8))
         raise RuntimeError("terminal batch failure")
