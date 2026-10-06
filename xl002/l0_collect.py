@@ -39,7 +39,7 @@ FROZEN_START_BLOCK = 954800
 FROZEN_END_BLOCK = 1591011
 MAX_ATTEMPTS = 5
 RPC_BATCH_SIZE = 50
-HEADER_BATCH_SIZE = 200
+HEADER_BATCH_SIZE = 500
 USER_AGENT = "AI-Trading-XL002-L0/1.0"
 
 EVENT_SIGNATURES = {
@@ -503,8 +503,7 @@ def run_full(
     block_batches = list(chunks(required_blocks, HEADER_BATCH_SIZE))
     def fetch_block_batch(ns: list[int]) -> tuple[list[int], list[Any]]:
         return ns, client.call_batch([("eth_getBlockByNumber", [hex(n), False]) for n in ns])
-    with ThreadPoolExecutor(max_workers=2) as ex:
-        fetched_block_batches = list(ex.map(fetch_block_batch, block_batches))
+    fetched_block_batches = [fetch_block_batch(ns) for ns in block_batches]
     for ns, blocks in fetched_block_batches:
         for n, b in zip(ns, blocks):
             if b is None:
