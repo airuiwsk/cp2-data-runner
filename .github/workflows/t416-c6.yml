@@ -3,7 +3,7 @@ name: T416 frozen C6
 on:
   push:
     branches: [t416-c6-run]
-    paths: ['T416_C6_TRIGGER.md']
+    paths: ['T416_DI_TRIGGER.md']
 
 permissions:
   contents: read
