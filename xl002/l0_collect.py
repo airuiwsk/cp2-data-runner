@@ -460,6 +460,7 @@ def run_full(
     start_block: int,
     end_block: int,
     preflight: dict[str, Any],
+    header_budget_seconds: int = 0,
 ) -> dict[str, Any]:
     # Discover the canonical factory-derived pool universe without using
     # economic outcomes. Pools created before the frozen day may still emit
@@ -532,6 +533,7 @@ def run_full(
     block_rows = [cached_by_number[n] for n in required_blocks if n in cached_by_number]
     missing_blocks = [n for n in required_blocks if n not in cached_by_number]
     block_batches = list(chunks(missing_blocks, HEADER_BATCH_SIZE))
+    header_phase_started = time.monotonic()
     # Transport-only cooldown before sparse-header acquisition after the long log phase.
     if missing_blocks:
         time.sleep(60)
@@ -539,6 +541,8 @@ def run_full(
         return ns, client.call_batch([("eth_getBlockByNumber", [hex(n), False]) for n in ns])
     checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
     for ns in block_batches:
+        if header_budget_seconds > 0 and (time.monotonic() - header_phase_started) >= header_budget_seconds:
+            break
         _, blocks = fetch_block_batch(ns)
         new_rows = []
         for n, b in zip(ns, blocks):
@@ -556,6 +560,20 @@ def run_full(
     block_rows.sort(key=lambda row: row["number"])
     block_hash_by_number: dict[int, str] = {row["number"]: row["hash"] for row in block_rows}
     write_jsonl(out / "decoded" / "blocks-sparse.jsonl", block_rows)
+    header_acquisition_complete = len(block_rows) == len(required_blocks)
+    if not header_acquisition_complete:
+        return {
+            **preflight,
+            "required_block_header_count": len(required_blocks),
+            "acquired_block_header_count": len(block_rows),
+            "resumed_block_header_count": len(cached_by_number),
+            "new_block_header_count": len(block_rows) - len(cached_by_number),
+            "checkpoint_block_count": len(checkpoint_blocks),
+            "event_block_count": len(event_blocks),
+            "header_acquisition_complete": False,
+            "transport_checkpoint_only": True,
+            "l1_fixture_sufficient": False,
+        }
 
     event_block_hash_mismatch = 0
     for log in all_logs:
@@ -611,6 +629,9 @@ def run_full(
     return {
         **preflight,
         "required_block_header_count": len(required_blocks),
+        "acquired_block_header_count": len(block_rows),
+        "header_acquisition_complete": True,
+        "transport_checkpoint_only": False,
         "resumed_block_header_count": len(cached_by_number),
         "new_block_header_count": len(missing_blocks),
         "checkpoint_block_count": len(checkpoint_blocks),
@@ -643,6 +664,7 @@ def main() -> int:
     parser = argparse.ArgumentParser()
     parser.add_argument("--mode", choices=("preflight", "full"), default="preflight")
     parser.add_argument("--out", default="artifacts/xl002-l0")
+    parser.add_argument("--header-budget-seconds", type=int, default=0)
     args = parser.parse_args()
 
     out = pathlib.Path(args.out)
@@ -692,7 +714,7 @@ def main() -> int:
     }
 
     if args.mode == "full":
-        result = run_full(client, out, start_block, end_block, preflight) | {
+        result = run_full(client, out, start_block, end_block, preflight, args.header_budget_seconds) | {
             k: v for k, v in result.items() if k not in preflight
         }
 
@@ -703,7 +725,9 @@ def main() -> int:
 
     if args.mode == "full":
         l0_pass = (
-            result.get("start_block") == FROZEN_START_BLOCK
+            result.get("header_acquisition_complete") is True
+            and result.get("acquired_block_header_count") == result.get("required_block_header_count")
+            and result.get("start_block") == FROZEN_START_BLOCK
             and result.get("end_block") == FROZEN_END_BLOCK
             and result.get("start_block_timestamp") >= start_ts
             and result.get("end_block_timestamp") < end_ts
