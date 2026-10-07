@@ -39,7 +39,7 @@ FROZEN_START_BLOCK = 954800
 FROZEN_END_BLOCK = 1591011
 MAX_ATTEMPTS = 8
 RPC_BATCH_SIZE = 50
-HEADER_BATCH_SIZE = 500
+HEADER_BATCH_SIZE = 50
 USER_AGENT = "AI-Trading-XL002-L0/1.0"
 
 EVENT_SIGNATURES = {
@@ -532,6 +532,9 @@ def run_full(
     block_rows = [cached_by_number[n] for n in required_blocks if n in cached_by_number]
     missing_blocks = [n for n in required_blocks if n not in cached_by_number]
     block_batches = list(chunks(missing_blocks, HEADER_BATCH_SIZE))
+    # Transport-only cooldown before sparse-header acquisition after the long log phase.
+    if missing_blocks:
+        time.sleep(60)
     def fetch_block_batch(ns: list[int]) -> tuple[list[int], list[Any]]:
         return ns, client.call_batch([("eth_getBlockByNumber", [hex(n), False]) for n in ns])
     checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
