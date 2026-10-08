@@ -22,6 +22,7 @@ import urllib.request
 import threading
 from concurrent.futures import ThreadPoolExecutor
 from typing import Any, Iterable
+from l0_transport_cache import VerifiedRpcCache
 
 try:
     from Crypto.Hash import keccak
@@ -101,6 +102,10 @@ class RpcClient:
         self.failure_count = 0
         self._lock = threading.Lock()
         self.log_coverage: list[dict[str, Any]] = []
+        self.cached_call_count = 0
+        checkpoint = raw_log.parent.parent / "transport-checkpoint"
+        self.log_cache = VerifiedRpcCache(checkpoint / "logs-raw.jsonl", url, {"eth_getLogs"})
+        self.tx_cache = VerifiedRpcCache(checkpoint / "tx-raw.jsonl", url, {"eth_getTransactionByHash", "eth_getTransactionReceipt"})
         raw_log.parent.mkdir(parents=True, exist_ok=True)
 
     def _append_raw(self, record: dict[str, Any]) -> None:
@@ -115,6 +120,13 @@ class RpcClient:
         payload = {"jsonrpc": "2.0", "id": request_id, "method": method, "params": params}
         request_bytes = canonical_bytes(payload)
         request_sha = sha256_bytes(request_bytes)
+        if method == "eth_getLogs":
+            hit = self.log_cache.get([(method, params)])
+            if hit is not None:
+                record, results = hit
+                self._append_raw({**record, "cache_source": "logs-raw.jsonl", "cache_replayed_at": utc_now()})
+                self.cached_call_count += 1
+                return results[0]
         last_error = None
 
         for attempt in range(1, MAX_ATTEMPTS + 1):
@@ -154,6 +166,8 @@ class RpcClient:
                         time.sleep(min(2 ** (attempt - 1), 8))
                         continue
                     raise RuntimeError(last_error)
+                if method == "eth_getLogs":
+                    self.log_cache.put({"endpoint": self.url, "acquired_at": acquired_at, "attempt": attempt, "request_sha256": request_sha, "request": payload, "response_sha256": sha256_bytes(canonical_response), "response": response_obj})
                 return response_obj.get("result")
             except (urllib.error.URLError, TimeoutError, json.JSONDecodeError, OSError) as exc:
                 last_error = f"{type(exc).__name__}: {exc}"
@@ -188,6 +202,14 @@ class RpcClient:
         payload = [{"jsonrpc": "2.0", "id": first_id + i, "method": m, "params": p} for i, (m, p) in enumerate(calls)]
         request_bytes = canonical_bytes(payload)
         request_sha = sha256_bytes(request_bytes)
+        cache = self.tx_cache if all(m in {"eth_getTransactionByHash", "eth_getTransactionReceipt"} for m, _ in calls) else None
+        if cache is not None:
+            hit = cache.get(calls)
+            if hit is not None:
+                record, results = hit
+                self._append_raw({**record, "cache_source": "tx-raw.jsonl", "cache_replayed_at": utc_now()})
+                self.cached_call_count += len(calls)
+                return results
         for attempt in range(1, MAX_ATTEMPTS + 1):
             acquired_at = utc_now()
             try:
@@ -205,7 +227,10 @@ class RpcClient:
                     ordered.append(x.get("result"))
                 with self._lock:
                     self.request_count += len(calls)
-                self._append_raw({"endpoint": self.url, "acquired_at": acquired_at, "attempt": attempt, "request_sha256": request_sha, "request": payload, "response_sha256": sha256_bytes(canonical_bytes(response_obj)), "response": response_obj, "transport": "json_rpc_batch"})
+                record = {"endpoint": self.url, "acquired_at": acquired_at, "attempt": attempt, "request_sha256": request_sha, "request": payload, "response_sha256": sha256_bytes(canonical_bytes(response_obj)), "response": response_obj, "transport": "json_rpc_batch"}
+                self._append_raw(record)
+                if cache is not None:
+                    cache.put(record)
                 return ordered
             except Exception as exc:
                 with self._lock:
@@ -301,6 +326,8 @@ def get_logs_split(
                 "address_sha256": sha256_bytes(canonical_bytes(address_identity)),
                 "topics_sha256": sha256_bytes(canonical_bytes(topics)),
                 "log_count": len(result),
+                "request_fingerprint": sha256_bytes(canonical_bytes(["eth_getLogs", [filt]])),
+                "response_result_sha256": sha256_bytes(canonical_bytes(result)),
                 "status": "COMPLETE",
             }
         )
@@ -484,6 +511,26 @@ def run_full(
         logs = get_logs_split(client, addr_chunk, start_block, end_block, event_topics)
         all_logs.extend(logs)
     all_logs.sort(key=event_sort_key)
+    # Fail closed on holes/overlaps in every frozen address/topic scan partition.
+    expected_scans = [(FACTORY, [TOPICS["PoolCreated"]], 0, end_block)]
+    expected_scans += [(group, event_topics, start_block, end_block) for group in chunks(addresses, 50)]
+    remaining = list(client.log_coverage)
+    for address_filter, topic_filter, lo, hi in expected_scans:
+        identity = address_filter if isinstance(address_filter, str) else sorted(a.lower() for a in address_filter)
+        addr_sha = sha256_bytes(canonical_bytes(identity))
+        topic_sha = sha256_bytes(canonical_bytes(topic_filter))
+        group = sorted([r for r in remaining if r["address_sha256"] == addr_sha and r["topics_sha256"] == topic_sha], key=lambda r: r["fromBlock"])
+        cursor = lo
+        for row in group:
+            if row["status"] != "COMPLETE" or row["fromBlock"] != cursor or row["toBlock"] < cursor or row["toBlock"] > hi:
+                raise RuntimeError("XL002 exact log range coverage failure")
+            cursor = row["toBlock"] + 1
+        if cursor != hi + 1:
+            raise RuntimeError("XL002 incomplete deterministic log range coverage")
+        remaining = [r for r in remaining if not (r["address_sha256"] == addr_sha and r["topics_sha256"] == topic_sha)]
+    if remaining:
+        raise RuntimeError("XL002 unexpected log coverage filter group")
+    log_range_coverage_exact = True
     event_counts = {name: 0 for name in ("Initialize", "Mint", "Burn", "Collect", "Swap")}
     decode_failures = []
     for log in all_logs:
@@ -587,6 +634,9 @@ def run_full(
             event_block_hash_mismatch += 1
 
     unique_txs = sorted({log.get("transactionHash") for log in all_logs if log.get("transactionHash")})
+    event_receipt_keys = {}
+    for log in all_logs:
+        event_receipt_keys.setdefault(str(log["transactionHash"]).lower(), set()).add((str(log["blockHash"]).lower(), hex_int(log["logIndex"])))
     # Outcome-blind transport acceleration: fetch the exact same required
     # transaction/receipt envelope via deterministic JSON-RPC batches instead
     # of two serial RPC calls per transaction. No sample, field, or L0 gate changes.
@@ -594,21 +644,34 @@ def run_full(
     receipt_rows = []
     receipt_classification = {"success": 0, "failed": 0, "unknown": 0}
     tx_batches = list(chunks(unique_txs, RPC_BATCH_SIZE))
-    def fetch_tx_batch(tx_hashes: list[str]) -> tuple[list[str], list[Any], list[Any]]:
-        txs = client.call_batch([("eth_getTransactionByHash", [txh]) for txh in tx_hashes])
-        receipts = client.call_batch([("eth_getTransactionReceipt", [txh]) for txh in tx_hashes])
-        return tx_hashes, txs, receipts
-    with ThreadPoolExecutor(max_workers=2) as ex:
-        fetched_tx_batches = list(ex.map(fetch_tx_batch, tx_batches))
-    for tx_hashes, txs, receipts in fetched_tx_batches:
+    # Serial bounded transport: verified raw RPC batch cache resumes exact hashes.
+    for tx_hashes in tx_batches:
+        if run_budget_seconds > 0 and run_started_monotonic is not None and time.monotonic() - run_started_monotonic >= run_budget_seconds:
+            break
+        txs = client.call_batch([("eth_getTransactionByHash", [h]) for h in tx_hashes])
+        receipts = client.call_batch([("eth_getTransactionReceipt", [h]) for h in tx_hashes])
         for txh, tx, receipt in zip(tx_hashes, txs, receipts):
             if tx is None or receipt is None:
                 raise RuntimeError(f"unresolvable event transaction/receipt: {txh}")
+            if str(tx.get("hash", "")).lower() != txh.lower() or str(receipt.get("transactionHash", "")).lower() != txh.lower():
+                raise RuntimeError(f"event transaction/receipt hash mismatch: {txh}")
+            if tx.get("blockNumber") != receipt.get("blockNumber") or tx.get("transactionIndex") != receipt.get("transactionIndex"):
+                raise RuntimeError(f"event transaction/receipt location mismatch: {txh}")
+            receipt_logs = receipt.get("logs")
+            if not isinstance(receipt_logs, list):
+                raise RuntimeError(f"missing receipt logs: {txh}")
+            observed = {(str(x.get("blockHash")).lower(), hex_int(x.get("logIndex"))) for x in receipt_logs}
+            if not event_receipt_keys[txh.lower()].issubset(observed):
+                raise RuntimeError(f"relevant event absent from receipt logs: {txh}")
             tx_rows.append({"hash": txh, "transactionIndex": hex_int(tx.get("transactionIndex")), "blockNumber": hex_int(tx.get("blockNumber")), "from": tx.get("from"), "to": tx.get("to"), "input": tx.get("input")})
             status_raw = receipt.get("status")
             classification = "success" if status_raw == "0x1" else ("failed" if status_raw == "0x0" else "unknown")
             receipt_rows.append({"transactionHash": txh, "status": status_raw, "classification": classification, "gasUsed": hex_int(receipt.get("gasUsed")), "effectiveGasPrice": hex_int(receipt.get("effectiveGasPrice")) if receipt.get("effectiveGasPrice") else None, "logs": receipt.get("logs") or []})
             receipt_classification[classification] += 1
+    if len(tx_rows) != len(unique_txs):
+        write_jsonl(out / "decoded" / "transactions.jsonl", tx_rows)
+        write_jsonl(out / "decoded" / "receipts.jsonl", receipt_rows)
+        return {**preflight, "required_block_header_count": len(required_blocks), "acquired_block_header_count": len(block_rows), "header_acquisition_complete": True, "transport_checkpoint_only": True, "event_transaction_count": len(unique_txs), "acquired_event_transaction_count": len(tx_rows), "receipt_envelope_complete": False, "l1_fixture_sufficient": False}
     write_jsonl(out / "decoded" / "transactions.jsonl", tx_rows)
     write_jsonl(out / "decoded" / "receipts.jsonl", receipt_rows)
 
@@ -643,9 +706,12 @@ def run_full(
         "event_block_count": len(event_blocks),
         "event_block_hash_mismatch": event_block_hash_mismatch,
         "event_transaction_count": len(unique_txs),
+        "acquired_event_transaction_count": len(tx_rows),
+        "receipt_envelope_complete": True,
         "receipt_classification": receipt_classification,
         "duplicate_event_log_keys": len(duplicate_keys),
         "event_counts": event_counts,
+        "log_range_coverage_exact": log_range_coverage_exact,
         "event_decode_failures": len(decode_failures),
         "l1_fixture_sufficient": (event_counts["Initialize"] >= 1 and event_counts["Swap"] >= 100 and (event_counts["Mint"] + event_counts["Burn"]) >= 1),
     }
@@ -721,11 +787,14 @@ def main() -> int:
     }
 
     if args.mode == "full":
+        # Full L0 coverage excludes overlapping, separately-audited preflight probes.
+        client.log_coverage.clear()
         result = run_full(client, out, start_block, end_block, preflight, args.header_budget_seconds, args.run_budget_seconds, run_started_monotonic) | {
             k: v for k, v in result.items() if k not in preflight
         }
 
     result["rpc_request_count"] = client.request_count
+    result["rpc_cache_replayed_call_count"] = client.cached_call_count
     result["rpc_failure_attempts"] = client.failure_count
     result["log_scan_completed_chunks"] = len(client.log_coverage)
     write_json(out / "log-range-coverage.json", client.log_coverage)
@@ -733,6 +802,8 @@ def main() -> int:
     if args.mode == "full":
         l0_pass = (
             result.get("header_acquisition_complete") is True
+            and result.get("receipt_envelope_complete") is True
+            and result.get("log_range_coverage_exact") is True
             and result.get("acquired_block_header_count") == result.get("required_block_header_count")
             and result.get("start_block") == FROZEN_START_BLOCK
             and result.get("end_block") == FROZEN_END_BLOCK

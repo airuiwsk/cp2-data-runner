@@ -31,8 +31,10 @@ jobs:
       - name: Install pinned dependency
         run: pip install -r xl002/requirements.txt
 
-      - name: Compile collector
-        run: python -m py_compile xl002/l0_collect.py
+      - name: Compile collector and run synthetic cache tests
+        run: |
+          python -m py_compile xl002/l0_collect.py xl002/l0_transport_cache.py
+          python -m unittest discover -s xl002 -p 'test_l0_transport_cache.py' -v
 
       - name: Restore XL002 public-header checkpoint
         uses: actions/cache@v4
