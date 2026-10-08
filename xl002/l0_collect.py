@@ -461,6 +461,8 @@ def run_full(
     end_block: int,
     preflight: dict[str, Any],
     header_budget_seconds: int = 0,
+    run_budget_seconds: int = 0,
+    run_started_monotonic: float | None = None,
 ) -> dict[str, Any]:
     # Discover the canonical factory-derived pool universe without using
     # economic outcomes. Pools created before the frozen day may still emit
@@ -542,6 +544,9 @@ def run_full(
     checkpoint_path.parent.mkdir(parents=True, exist_ok=True)
     for ns in block_batches:
         if header_budget_seconds > 0 and (time.monotonic() - header_phase_started) >= header_budget_seconds:
+            break
+        # Also bound the complete run, including the preceding log scan.
+        if run_budget_seconds > 0 and run_started_monotonic is not None and (time.monotonic() - run_started_monotonic) >= run_budget_seconds:
             break
         _, blocks = fetch_block_batch(ns)
         new_rows = []
@@ -665,6 +670,7 @@ def main() -> int:
     parser.add_argument("--mode", choices=("preflight", "full"), default="preflight")
     parser.add_argument("--out", default="artifacts/xl002-l0")
     parser.add_argument("--header-budget-seconds", type=int, default=0)
+    parser.add_argument("--run-budget-seconds", type=int, default=8400)
     args = parser.parse_args()
 
     out = pathlib.Path(args.out)
@@ -675,6 +681,7 @@ def main() -> int:
     start_ts = parse_utc(WINDOW_START)
     end_ts = parse_utc(WINDOW_END)
 
+    run_started_monotonic = time.monotonic()
     chain_id = client.call("eth_chainId", [])
     if chain_id != CHAIN_ID_HEX:
         raise RuntimeError(f"chain id mismatch: expected {CHAIN_ID_HEX}, got {chain_id}")
@@ -714,7 +721,7 @@ def main() -> int:
     }
 
     if args.mode == "full":
-        result = run_full(client, out, start_block, end_block, preflight, args.header_budget_seconds) | {
+        result = run_full(client, out, start_block, end_block, preflight, args.header_budget_seconds, args.run_budget_seconds, run_started_monotonic) | {
             k: v for k, v in result.items() if k not in preflight
         }
 
