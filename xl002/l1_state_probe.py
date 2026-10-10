@@ -11,7 +11,7 @@ CHAIN = "0x1237"
 BLOCK = 1241589
 POOL = "0x67f9a98220201f9cca2f5a911d382ba5dc7abdd5"
 PRIMARY = "https://rpc.mainnet.chain.robinhood.com"
-CANDIDATES = {"blockscout_legacy_no_key": "https://robinhoodchain.blockscout.com/api/eth-rpc", "eiranodes_public_no_key": "https://rpc.eiranodes.dev"}
+CANDIDATES = {"blockreq_public": "https://robinhood-mainnet-rpc.blockreq.com/v1/rpc/public", "nodeflare_public": "https://rpc.nodeflare.app/robinhood/public"}
 SELECTORS = {
     "slot0": "0x3850c7bd",
     "liquidity": "0x1a686502",
