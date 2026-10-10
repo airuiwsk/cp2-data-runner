@@ -54,11 +54,43 @@ jobs:
         run: |
           test -f artifacts/xl002-l0-full/quality-report.json && cat artifacts/xl002-l0-full/quality-report.json || true
 
-      - name: Upload preflight artifact
+      # Transport-only packaging: separate artifacts stay below the 512 MiB
+      # connector download limit. Frozen L0 collection/gates are unchanged.
+      - name: Upload XL002 L0 metadata
         if: always()
         uses: actions/upload-artifact@v4
         with:
-          name: xl002-l0-full-${{ github.run_id }}
-          path: artifacts/xl002-l0-full/
+          name: xl002-l0-metadata-${{ github.run_id }}
+          path: |
+            artifacts/xl002-l0-full/quality-report.json
+            artifacts/xl002-l0-full/file-manifest.json
+            artifacts/xl002-l0-full/log-range-coverage.json
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload XL002 L0 raw provenance
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xl002-l0-raw-${{ github.run_id }}
+          path: artifacts/xl002-l0-full/raw/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload XL002 L0 decoded evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xl002-l0-decoded-${{ github.run_id }}
+          path: artifacts/xl002-l0-full/decoded/
+          if-no-files-found: warn
+          retention-days: 30
+
+      - name: Upload XL002 L0 transport checkpoint
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xl002-l0-checkpoint-${{ github.run_id }}
+          path: artifacts/xl002-l0-full/transport-checkpoint/
           if-no-files-found: warn
           retention-days: 30
