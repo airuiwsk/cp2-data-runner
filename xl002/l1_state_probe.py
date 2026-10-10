@@ -31,7 +31,7 @@ def rpc(url, method, params):
                 "request_sha256": sha(request),
                 "acquired_at_utc": datetime.datetime.now(datetime.timezone.utc).isoformat()}
     try:
-        req = urllib.request.Request(url, canonical(request), {"Content-Type": "application/json", "Accept": "application/json"}, method="POST")
+        req = urllib.request.Request(url, canonical(request), {"Content-Type": "application/json", "Accept": "application/json", "User-Agent": "AI-Trading-XL002-L0/1.0"}, method="POST")
         with urllib.request.urlopen(req, timeout=20) as response:
             payload = json.loads(response.read())
         evidence["response_sha256"] = sha(payload)
