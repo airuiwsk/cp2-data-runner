@@ -11,7 +11,7 @@ CHAIN = "0x1237"
 BLOCK = 1241589
 POOL = "0x67f9a98220201f9cca2f5a911d382ba5dc7abdd5"
 PRIMARY = "https://rpc.mainnet.chain.robinhood.com"
-SECONDARY = "https://robinhoodchain.blockscout.com/api/eth-rpc"
+CANDIDATES = {"blockscout_legacy_no_key": "https://robinhoodchain.blockscout.com/api/eth-rpc", "eiranodes_public_no_key": "https://rpc.eiranodes.dev"}
 SELECTORS = {
     "slot0": "0x3850c7bd",
     "liquidity": "0x1a686502",
@@ -81,7 +81,7 @@ def probe(endpoint, expected_hash):
 def main():
     pathlib.Path("artifacts/xl002-l1-state-probe").mkdir(parents=True, exist_ok=True)
     chain, c = rpc(PRIMARY, "eth_chainId", [])
-    block, b = rpc(PRIMARY, "eth_getBlockByNumber", [hex(BLOCK), False]) if chain == CHAIN else (None, None)
+    block, b = rpc(PRIMARY, "eth_getBlockByNumber", [hex(BLOCK), False]) if isinstance(chain, str) and chain.lower() == CHAIN else (None, None)
     expected = block.get("hash") if isinstance(block, dict) else None
     result = {
         "schema": "xl002-l1-state-probe-v1",
@@ -90,14 +90,14 @@ def main():
         "performance_computed": False,
         "l0_contract_changed": False,
         "l1_strategy_discovery_authorized": False,
-        "reference": {"chain_status": c["status"], "block_evidence": b, "block_hash": expected},
-        "independent": probe(SECONDARY, expected),
+        "reference": {"chain_status": c["status"], "chain_evidence": c, "block_evidence": b, "block_hash": expected},
+        "independent_candidates": {name: probe(url, expected) for name, url in CANDIDATES.items()},
         "l1_replay_fidelity": "NOT_TESTED",
     }
-    result["historical_state_probe_pass"] = result["independent"]["status"] == "HISTORICAL_STATE_AVAILABLE_FOR_ONE_BLOCK"
+    result["historical_state_probe_pass"] = any(item["status"] == "HISTORICAL_STATE_AVAILABLE_FOR_ONE_BLOCK" for item in result["independent_candidates"].values())
     pathlib.Path("artifacts/xl002-l1-state-probe/quality-report.json").write_bytes(canonical(result) + b"\n")
     print(json.dumps({"historical_state_probe_pass": result["historical_state_probe_pass"],
-                      "independent_status": result["independent"]["status"],
+                      "independent_statuses": {k: v["status"] for k, v in result["independent_candidates"].items()},
                       "l1_replay_fidelity": "NOT_TESTED", "performance_computed": False}))
     return 0
 
