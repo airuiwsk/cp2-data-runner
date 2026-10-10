@@ -1,0 +1,1 @@
+L0 continuation checkpoint 38039936647: 177200 of 231251 transaction and receipt pairs verified. 54051 remain. Frozen read-only v2 acquisition only.
