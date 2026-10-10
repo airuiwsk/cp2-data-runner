@@ -1,0 +1,30 @@
+name: XL002 L1 historical state availability probe
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - '.github/workflows/xl002-l1-state-probe.yml'
+      - 'xl002/l1_state_probe.py'
+permissions:
+  contents: read
+jobs:
+  state-probe:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Compile outcome-blind probe
+        run: python -m py_compile xl002/l1_state_probe.py
+      - name: Probe public historical state without credentials
+        run: python xl002/l1_state_probe.py
+      - name: Upload XL002 L1 probe evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: xl002-l1-state-probe-${{ github.run_id }}
+          path: artifacts/xl002-l1-state-probe/
+          if-no-files-found: warn
+          retention-days: 30
