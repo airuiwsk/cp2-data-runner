@@ -11,7 +11,7 @@ CHAIN = "0x1237"
 BLOCK = 1241589
 POOL = "0x67f9a98220201f9cca2f5a911d382ba5dc7abdd5"
 PRIMARY = "https://rpc.mainnet.chain.robinhood.com"
-CANDIDATES = {"blockreq_public": "https://robinhood-mainnet-rpc.blockreq.com/v1/rpc/public", "nodeflare_public": "https://rpc.nodeflare.app/robinhood/public"}
+CANDIDATES = {"publicnode": "https://robinhood-rpc.publicnode.com", "triport_public": "https://triport.io/rpc/robinhood/public"}
 SELECTORS = {
     "slot0": "0x3850c7bd",
     "liquidity": "0x1a686502",
