@@ -1,0 +1,1 @@
+Continue frozen XL002 v2 read-only L0 acquisition from saved cache xl002-l0-v2-37996192499. Prior run 37996192499: 198262/198262 sparse headers, 117300/231251 transaction/receipt envelopes. L0 NOT PASS; no L1, economics, secrets, or capital.
