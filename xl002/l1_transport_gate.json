@@ -1,0 +1,9 @@
+{
+  "schema": "XL002_L1_TRANSPORT_GATE_V1",
+  "frozen_l0_run": 38073851189,
+  "known_positive_block": 1234595,
+  "expected_event": "Flash",
+  "status": "NOT_EXECUTED",
+  "performance_computed": false,
+  "l1_replay_fidelity_pass": false
+}
