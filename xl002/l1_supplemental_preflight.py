@@ -70,14 +70,15 @@ def run(rpc=None, out=OUT):
                 raise ValueError("duplicate event identity")
             keys.add(key)
             counts[by_topic[topic]] += 1
-            if (block == BLOCK and log["blockHash"].lower() == EXPECTED["blockHash"]
+            if (topic == event_topic(EVENTS[0]).lower() and block == BLOCK
+                    and log["blockHash"].lower() == EXPECTED["blockHash"]
                     and log["transactionHash"].lower() == EXPECTED["transactionHash"]
                     and int(log["logIndex"], 16) == EXPECTED["logIndex"]
                     and log["address"].lower() == EXPECTED["address"]):
                 positive += 1
         if positive != 1:
             raise ValueError("known-positive Flash missing from full-range query")
-        (out / "range-logs.json").write_bytes(canonical_bytes(logs) + b"\\n")
+        (out / "range-logs.json").write_bytes(canonical_bytes(logs) + b"\n")
         report.update(
             status="SUPPLEMENTAL_TOPIC_TRANSPORT_PREFLIGHT_PASS",
             raw_response_sha256=sha256_bytes(canonical_bytes(logs)),
@@ -89,7 +90,7 @@ def run(rpc=None, out=OUT):
         report["terminal_error"] = f"{type(exc).__name__}: {exc}"
     finally:
         report["finished_at"] = utc_now()
-        (out / "quality.json").write_bytes(canonical_bytes(report) + b"\\n")
+        (out / "quality.json").write_bytes(canonical_bytes(report) + b"\n")
     return report
 
 
