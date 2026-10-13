@@ -62,6 +62,26 @@ def main() -> None:
     manifest = out / "manifest.ndjson"
     errors = out / "errors.ndjson"
     run_started = utc_now()
+    # Operational cutoff only: T406's frozen prospective interval is closed.
+    # This guard does not inspect outcomes, modify the frozen sample, or backfill.
+    if datetime.now(timezone.utc) >= datetime(2026, 10, 2, 0, 0, tzinfo=timezone.utc):
+        manifest = out / "manifest.ndjson"
+        errors = out / "errors.ndjson"
+        manifest.touch(exist_ok=True)
+        errors.touch(exist_ok=True)
+        summary = {
+            "trial_id": "T406", "purpose": "postclose_operational_noop",
+            "sample_end_utc": "2026-10-02T00:00:00Z",
+            "run_started_utc": run_started, "run_finished_utc": utc_now(),
+            "request_attempts": 0, "retry_events": 0, "terminal_errors": 0,
+            "raw_file_count": 0, "performance_statistics_computed": False,
+            "manifest_sha256": hashlib.sha256(manifest.read_bytes()).hexdigest(),
+            "manifest_bytes": manifest.stat().st_size,
+        }
+        (out / "run-summary.json").write_text(
+            json.dumps(summary, indent=2) + "\n", encoding="utf-8"
+        )
+        return
     deadline = time.monotonic() + args.duration_seconds
     seq = 0
     request_attempts = 0
